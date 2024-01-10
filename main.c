@@ -1,7 +1,7 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "include/raylib.h"
 #include "include/raymath.h"
-#include<stdlib.h>
 
 #define MAX_NODES 100
 #define BACKGROUNDCOLOR BLACK
