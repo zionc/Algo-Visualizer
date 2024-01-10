@@ -8,7 +8,6 @@
 #define CIRCLE_RADIUS 20.f
 
 
-
 typedef struct Node
 {
     Vector2 position;
@@ -25,39 +24,41 @@ void add_node(Node *node)
     nodes_size++;
 }
 
-void add_neighbor(Node *root, Node *neigbor) {
+void add_neighbor(Node *root, Node *neigbor) 
+{
     root->neighbors[root->size] = *neigbor;
     root->size++;
-    // bidirectional
-    // neigbor->neighbors[neigbor->size] = root;
-    // neigbor->size++;
 }
 
-void draw_node(Node node, Color circle_color, Color text_color) {
-    Font default_font = GetFontDefault();
-    DrawCircleV(node.position, CIRCLE_RADIUS, circle_color);
+
+void draw_node(Node node, Color circle_color, Color text_color) 
+{
     char id[4] = {0};
     sprintf(id,"%d",node.id);
+
+    Font default_font = GetFontDefault();
     Vector2 text_size = MeasureTextEx(default_font,id,CIRCLE_RADIUS,5);
     Vector2 scale = Vector2Scale(text_size,.5f);
+
+    DrawCircleV(node.position, CIRCLE_RADIUS, circle_color);
     DrawTextEx(default_font,id,Vector2Subtract(node.position,scale),CIRCLE_RADIUS,5,text_color);
 }
 
-void display_graph() {
-    
+void display_graph() 
+{
     for(int i = 0; i < nodes_size; i++) {
         Node node = nodes[i];
         printf("Node [%d] Size = %d -> [",node.id,node.size);
         for(int j = 0; j < node.size; j++) {
-            if(j == node.size -1) printf("%d]\n",node.neighbors[j].id);
+            if(j == node.size -1) printf("%d",node.neighbors[j].id);
             else printf("%d,",node.neighbors[j].id);
         }
-        
+        printf("]\n");   
     }
-   
 }
 
-void clean_up() {
+void clean_up() 
+{
     for(int i = 0; i < nodes_size; i++) {
         free(nodes[i].neighbors);
     }
@@ -141,7 +142,7 @@ int main(void)
                         add_neighbor(start,neigbor);
                         add_neighbor(neigbor,start);
                         BeginTextureMode(target);
-                        DrawLineV(start->position,neigbor->position,RAYWHITE);
+                        DrawLineEx(start->position,neigbor->position,3,RAYWHITE);
                         draw_node(*neigbor,GREEN,YELLOW);
                         draw_node(*start,GREEN,YELLOW);
                         isDrawingEdge = false;
@@ -150,11 +151,11 @@ int main(void)
                 }
             }
         }
-        /*-------------------------------------------------------------------------------*/
-
+        // Show graph
         if(IsKeyPressed(KEY_S)) {
             display_graph();
         }
+        /*-------------------------------------------------------------------------------*/
 
         // Draw
         BeginDrawing();
