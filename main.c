@@ -1,22 +1,66 @@
 #include <stdio.h>
 #include "include/raylib.h"
 #include "include/raymath.h"
+#include<stdlib.h>
 
 #define MAX_NODES 100
 #define BACKGROUNDCOLOR BLACK
-#define CIRCLE_RADIUS 15.f
+#define CIRCLE_RADIUS 20.f
+
+
 
 typedef struct Node
 {
     Vector2 position;
     struct Node *neighbors;
+    int size,id,g_cost,h_cost;            
 } Node;
 
-Vector2 circles[MAX_NODES] = {0};
+Node nodes[MAX_NODES] = {0};
+int nodes_size = 0;
 
-void add_circle(Vector2 vect, int node_index)
+void add_node(Node *node)
 {
-    circles[node_index] = vect;
+    nodes[nodes_size] = *node;
+    nodes_size++;
+}
+
+void add_neighbor(Node *root, Node *neigbor) {
+    root->neighbors[root->size] = *neigbor;
+    root->size++;
+    // bidirectional
+    // neigbor->neighbors[neigbor->size] = root;
+    // neigbor->size++;
+}
+
+void draw_node(Node node, Color circle_color, Color text_color) {
+    Font default_font = GetFontDefault();
+    DrawCircleV(node.position, CIRCLE_RADIUS, circle_color);
+    char id[4] = {0};
+    sprintf(id,"%d",node.id);
+    Vector2 text_size = MeasureTextEx(default_font,id,CIRCLE_RADIUS,5);
+    Vector2 scale = Vector2Scale(text_size,.5f);
+    DrawTextEx(default_font,id,Vector2Subtract(node.position,scale),CIRCLE_RADIUS,5,text_color);
+}
+
+void display_graph() {
+    
+    for(int i = 0; i < nodes_size; i++) {
+        Node node = nodes[i];
+        printf("Node [%d] Size = %d -> [",node.id,node.size);
+        for(int j = 0; j < node.size; j++) {
+            if(j == node.size -1) printf("%d]\n",node.neighbors[j].id);
+            else printf("%d,",node.neighbors[j].id);
+        }
+        
+    }
+   
+}
+
+void clean_up() {
+    for(int i = 0; i < nodes_size; i++) {
+        free(nodes[i].neighbors);
+    }
 }
 
 int main(void)
@@ -24,7 +68,7 @@ int main(void)
     const int screenWidth = 800;
     const int screenHeight = 800;
     InitWindow(screenWidth, screenHeight, "A* Visualizer");
-    SetTargetFPS(60);
+    SetTargetFPS(120);
 
     // Create a RenderTexture2D to use as a canvas
     RenderTexture2D target = LoadRenderTexture(screenWidth, screenHeight);
@@ -34,7 +78,7 @@ int main(void)
     ClearBackground(BACKGROUNDCOLOR);
     EndTextureMode();
 
-    int node_index = 0;
+
     bool isDrawingEdge = false;
     while (!WindowShouldClose())
     {
@@ -45,27 +89,43 @@ int main(void)
         {
             Vector2 vect = {
                 .x = GetMouseX(),
-                .y = GetMouseY()};
+                .y = GetMouseY()
+            };
 
-            add_circle(vect, node_index);
+            Node *neighbors = malloc(sizeof(Node) * MAX_NODES);
+            if(neighbors == NULL) {
+                printf("Could not generate neighbors for node\n");
+                return -1;
+            }
+            Node node = {
+                .position = vect,
+                .neighbors = neighbors,
+                .size = 0,
+                .g_cost = 0,
+                .h_cost = 0,
+                .id = nodes_size
+            };
+            add_node(&node);
+
             BeginTextureMode(target);
-            DrawCircleV(vect, CIRCLE_RADIUS, RED);
+            draw_node(node,RED,YELLOW);
             EndTextureMode();
-            node_index++;
+
             printf("Mouse button clicked at (%d, %d)!\n", GetMouseX(), GetMouseY());
         }
         /* ---------------------------------------------------------------------------- */
-        /* Connect circles */
-        Vector2 mouse = GetMousePosition();
-        Vector2 start,end;
+        /* Draw connected nodes */
 
+        Vector2 mouse = GetMousePosition();
+        Node *start,*neigbor;
+    
         if(IsMouseButtonReleased(MOUSE_BUTTON_RIGHT) && !isDrawingEdge) 
         {
-            for(int i = 0; i < node_index; i++) {
-                if(CheckCollisionPointCircle(mouse,circles[i],CIRCLE_RADIUS)) {
-                    start = circles[i];
+            for(int i = 0; i < nodes_size; i++) {
+                if(CheckCollisionPointCircle(mouse,nodes[i].position,CIRCLE_RADIUS)) {
+                    start = &nodes[i];
                     BeginTextureMode(target);
-                    DrawCircleV(start,CIRCLE_RADIUS,YELLOW);
+                    draw_node(*start,YELLOW,GREEN);
                     isDrawingEdge = true;
                     EndTextureMode(); 
                 }
@@ -74,14 +134,16 @@ int main(void)
 
         if(isDrawingEdge)
         {
-            if(IsMouseButtonReleased(MOUSE_BUTTON_RIGHT) && !CheckCollisionPointCircle(mouse,start,30.f)) {
-                for(int i = 0; i < node_index; i++) {
-                    if(CheckCollisionPointCircle(mouse,circles[i],CIRCLE_RADIUS)) {
-                        end = circles[i];
+            if(IsMouseButtonReleased(MOUSE_BUTTON_RIGHT) && !CheckCollisionPointCircle(mouse,start->position,30.f)) {
+                for(int i = 0; i < nodes_size; i++) {
+                    if(CheckCollisionPointCircle(mouse,nodes[i].position,CIRCLE_RADIUS)) {
+                        neigbor = &nodes[i];
+                        add_neighbor(start,neigbor);
+                        add_neighbor(neigbor,start);
                         BeginTextureMode(target);
-                        DrawLineV(start,end,RAYWHITE);
-                        DrawCircleV(end,CIRCLE_RADIUS,GREEN);
-                        DrawCircleV(start,CIRCLE_RADIUS,GREEN);
+                        DrawLineV(start->position,neigbor->position,RAYWHITE);
+                        draw_node(*neigbor,GREEN,YELLOW);
+                        draw_node(*start,GREEN,YELLOW);
                         isDrawingEdge = false;
                         EndTextureMode();
                     }
@@ -89,6 +151,11 @@ int main(void)
             }
         }
         /*-------------------------------------------------------------------------------*/
+
+        if(IsKeyPressed(KEY_S)) {
+            display_graph();
+        }
+
         // Draw
         BeginDrawing();
 
@@ -96,7 +163,7 @@ int main(void)
         DrawTextureRec(target.texture, (Rectangle){0, 0, (float)target.texture.width, (float)-target.texture.height}, (Vector2){0, 0}, WHITE);
         EndDrawing();
     }
-
+    clean_up();
     CloseWindow();
 
     return 0;
