@@ -15,8 +15,16 @@ typedef struct Node
     int size,id,g_cost,h_cost;            
 } Node;
 
+typedef struct Edge
+{
+    Vector2 start,end;
+    Node *node_start, *node_end;
+
+} Edge;
+
 Node nodes[MAX_NODES] = {0};
-int nodes_size = 0;
+Edge edges[(MAX_NODES * (MAX_NODES -1)) / 2];
+int nodes_size,edges_size = 0;
 
 void add_node(Node *node)
 {
@@ -30,6 +38,21 @@ void add_neighbor(Node *root, Node *neigbor)
     root->size++;
 }
 
+Edge create_edge(Node *start, Node *end) 
+{
+    Edge edge = {
+        .start = start->position,
+        .end = end->position,
+        .node_start = start,
+        .node_end = end
+    };
+    return edge;
+}
+
+void add_edge(Edge *edge) {
+    edges[edges_size] = *edge;
+    edges_size++;
+}
 
 void draw_node(Node node, Color circle_color, Color text_color) 
 {
@@ -60,7 +83,14 @@ void display_graph()
         }
         printf("]\n");   
     }
+    printf("--------------------- Edges ---------------------\n");
+    printf("Number of edges: %d\n",edges_size);
+    for(int i = 0; i < edges_size; i++) {
+        Edge edge = edges[i];
+        printf("%d <---> %d\n",edge.node_start->id,edge.node_end->id);
+    }
 }
+
 
 void clean_up() 
 {
@@ -90,9 +120,11 @@ void select_edge_end(RenderTexture2D target, Node **start, Node **end, Vector2 m
     for(int i = 0; i < nodes_size; i++) {
         if(CheckCollisionPointCircle(mouse_pos,nodes[i].position,CIRCLE_RADIUS)) {
             *end = &nodes[i];
+            Edge edge = create_edge(*start,*end);
             add_neighbor(*start,*end);
             add_neighbor(*end,*start);
 
+            add_edge(&edge);
             BeginTextureMode(target);
             DrawLineEx((*start)->position,(*end)->position,3,RAYWHITE);
             draw_node(**start,GREEN,YELLOW);
