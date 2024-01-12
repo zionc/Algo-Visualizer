@@ -19,6 +19,7 @@ typedef struct Edge
 {
     Vector2 start,end;
     Node *node_start, *node_end;
+    int weight;
 
 } Edge;
 
@@ -38,18 +39,22 @@ void add_neighbor(Node *root, Node *neigbor)
     root->size++;
 }
 
+// Create edge, using distance between two vectors as it's weight
 Edge create_edge(Node *start, Node *end) 
 {
+    int distance = Vector2Distance(start->position,end->position);
     Edge edge = {
         .start = start->position,
         .end = end->position,
         .node_start = start,
-        .node_end = end
+        .node_end = end,
+        .weight = distance
     };
     return edge;
 }
 
-void add_edge(Edge *edge) {
+void add_edge(Edge *edge) 
+{
     edges[edges_size] = *edge;
     edges_size++;
 }
@@ -87,7 +92,7 @@ void display_graph()
     printf("Number of edges: %d\n",edges_size);
     for(int i = 0; i < edges_size; i++) {
         Edge edge = edges[i];
-        printf("%d <---> %d\n",edge.node_start->id,edge.node_end->id);
+        printf("%d <---> %d (Weight: %d)\n",edge.node_start->id,edge.node_end->id,edge.weight);
     }
 }
 
