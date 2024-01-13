@@ -15,22 +15,54 @@ typedef struct Node
     int size,id,g_cost,h_cost;            
 } Node;
 
-Node nodes[MAX_NODES] = {0};
-int nodes_size = 0;
+typedef struct Edge
+{
+    Vector2 start,end;
+    Node *node_start, *node_end;
+    int weight;
 
+} Edge;
+
+Node nodes[MAX_NODES] = {0};
+Edge edges[(MAX_NODES * (MAX_NODES -1)) / 2];
+int nodes_size,edges_size = 0;
+
+// Add node to pool of nodes
 void add_node(Node *node)
 {
     nodes[nodes_size] = *node;
     nodes_size++;
 }
 
+// Add neighbor to root
 void add_neighbor(Node *root, Node *neigbor) 
 {
     root->neighbors[root->size] = *neigbor;
     root->size++;
 }
 
+// Create edge, using distance between two vectors as it's weight
+Edge create_edge(Node *start, Node *end) 
+{
+    int distance = Vector2Distance(start->position,end->position);
+    Edge edge = {
+        .start = start->position,
+        .end = end->position,
+        .node_start = start,
+        .node_end = end,
+        .weight = distance
+    };
+    return edge;
+}
 
+// Add edge to pool of edges
+void add_edge(Edge *edge) 
+{
+    edges[edges_size] = *edge;
+    edges_size++;
+}
+
+// Draw a singular Node with circle_color, and text as text_color
 void draw_node(Node node, Color circle_color, Color text_color) 
 {
     char id[4] = {0};
@@ -44,8 +76,15 @@ void draw_node(Node node, Color circle_color, Color text_color)
     DrawTextEx(default_font,id,Vector2Subtract(node.position,scale),CIRCLE_RADIUS,5,text_color);
 }
 
+// Display edges and nodes
+// TODO - A lot going on here...
 void display_graph() 
 {
+    if(nodes_size == 0) {
+        printf("No nodes drawn\n");
+        return;
+    }
+    printf("--------------------- Nodes ---------------------\n");
     for(int i = 0; i < nodes_size; i++) {
         Node node = nodes[i];
         printf("Node [%d] Size = %d -> [",node.id,node.size);
@@ -55,8 +94,15 @@ void display_graph()
         }
         printf("]\n");   
     }
+    printf("--------------------- Edges ---------------------\n");
+    printf("Number of edges: %d\n",edges_size);
+    for(int i = 0; i < edges_size; i++) {
+        Edge edge = edges[i];
+        printf("%d <---> %d (Weight: %d)\n",edge.node_start->id,edge.node_end->id,edge.weight);
+    }
 }
 
+// Free the heap!
 void clean_up() 
 {
     for(int i = 0; i < nodes_size; i++) {
@@ -64,11 +110,51 @@ void clean_up()
     }
 }
 
+// Initiate drawing an edge, handles color
+void select_edge_start(RenderTexture2D target,Node **start, Vector2 mouse_pos) 
+{
+   for(int i = 0; i < nodes_size; i++) {
+        if(CheckCollisionPointCircle(mouse_pos,nodes[i].position,CIRCLE_RADIUS)) {
+            *start = &nodes[i];
+            BeginTextureMode(target);
+            draw_node(**start,YELLOW,GREEN);
+            EndTextureMode();
+        }
+    } 
+}
+
+// Create an edge between start and end, also updating the neighbors
+// TODO - Refactor this, maybe split up data processing and drawing
+void select_edge_end(RenderTexture2D target, Node **start, Node **end, Vector2 mouse_pos) 
+{   
+    if(IsMouseButtonReleased(MOUSE_BUTTON_RIGHT) && CheckCollisionPointCircle(mouse_pos,(*start)->position,CIRCLE_RADIUS)){
+        return;
+    }
+    for(int i = 0; i < nodes_size; i++) {
+        if(CheckCollisionPointCircle(mouse_pos,nodes[i].position,CIRCLE_RADIUS)) {
+            *end = &nodes[i];
+            Edge edge = create_edge(*start,*end);
+            add_neighbor(*start,*end);
+            add_neighbor(*end,*start);
+
+            add_edge(&edge);
+            BeginTextureMode(target);
+            DrawLineEx((*start)->position,(*end)->position,3,RAYWHITE);
+            draw_node(**start,GREEN,YELLOW);
+            draw_node(**end,GREEN,YELLOW);
+            EndTextureMode();
+
+            *start = NULL;
+            *end = NULL;
+        }
+    }
+}
+
 int main(void)
 {
     const int screenWidth = 800;
     const int screenHeight = 800;
-    InitWindow(screenWidth, screenHeight, "A* Visualizer");
+    InitWindow(screenWidth, screenHeight, "Algo Visualizer");
     SetTargetFPS(120);
 
     // Create a RenderTexture2D to use as a canvas
@@ -79,8 +165,9 @@ int main(void)
     ClearBackground(BACKGROUNDCOLOR);
     EndTextureMode();
 
-
-    bool isDrawingEdge = false;
+    Node *edge_start,*edge_end;
+    edge_start = NULL;
+    edge_end = NULL;
     while (!WindowShouldClose())
     {
         //
@@ -118,39 +205,14 @@ int main(void)
         /* Draw connected nodes */
 
         Vector2 mouse = GetMousePosition();
-        Node *start,*neigbor;
+        if(IsMouseButtonReleased(MOUSE_BUTTON_RIGHT)) 
+        {
+            if(edge_start == NULL) 
+                select_edge_start(target,&edge_start,mouse);
+            else if(edge_start != NULL && edge_end == NULL) 
+                select_edge_end(target,&edge_start,&edge_end,mouse);
+        }
     
-        if(IsMouseButtonReleased(MOUSE_BUTTON_RIGHT) && !isDrawingEdge) 
-        {
-            for(int i = 0; i < nodes_size; i++) {
-                if(CheckCollisionPointCircle(mouse,nodes[i].position,CIRCLE_RADIUS)) {
-                    start = &nodes[i];
-                    BeginTextureMode(target);
-                    draw_node(*start,YELLOW,GREEN);
-                    isDrawingEdge = true;
-                    EndTextureMode(); 
-                }
-            }
-        }
-
-        if(isDrawingEdge)
-        {
-            if(IsMouseButtonReleased(MOUSE_BUTTON_RIGHT) && !CheckCollisionPointCircle(mouse,start->position,30.f)) {
-                for(int i = 0; i < nodes_size; i++) {
-                    if(CheckCollisionPointCircle(mouse,nodes[i].position,CIRCLE_RADIUS)) {
-                        neigbor = &nodes[i];
-                        add_neighbor(start,neigbor);
-                        add_neighbor(neigbor,start);
-                        BeginTextureMode(target);
-                        DrawLineEx(start->position,neigbor->position,3,RAYWHITE);
-                        draw_node(*neigbor,GREEN,YELLOW);
-                        draw_node(*start,GREEN,YELLOW);
-                        isDrawingEdge = false;
-                        EndTextureMode();
-                    }
-                }
-            }
-        }
         // Show graph
         if(IsKeyPressed(KEY_S)) {
             display_graph();
