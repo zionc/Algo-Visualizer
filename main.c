@@ -27,12 +27,14 @@ Node nodes[MAX_NODES] = {0};
 Edge edges[(MAX_NODES * (MAX_NODES -1)) / 2];
 int nodes_size,edges_size = 0;
 
+// Add node to pool of nodes
 void add_node(Node *node)
 {
     nodes[nodes_size] = *node;
     nodes_size++;
 }
 
+// Add neighbor to root
 void add_neighbor(Node *root, Node *neigbor) 
 {
     root->neighbors[root->size] = *neigbor;
@@ -53,12 +55,14 @@ Edge create_edge(Node *start, Node *end)
     return edge;
 }
 
+// Add edge to pool of edges
 void add_edge(Edge *edge) 
 {
     edges[edges_size] = *edge;
     edges_size++;
 }
 
+// Draw a singular Node with circle_color, and text as text_color
 void draw_node(Node node, Color circle_color, Color text_color) 
 {
     char id[4] = {0};
@@ -72,6 +76,8 @@ void draw_node(Node node, Color circle_color, Color text_color)
     DrawTextEx(default_font,id,Vector2Subtract(node.position,scale),CIRCLE_RADIUS,5,text_color);
 }
 
+// Display edges and nodes
+// TODO - A lot going on here...
 void display_graph() 
 {
     if(nodes_size == 0) {
@@ -96,7 +102,7 @@ void display_graph()
     }
 }
 
-
+// Free the heap!
 void clean_up() 
 {
     for(int i = 0; i < nodes_size; i++) {
@@ -117,6 +123,8 @@ void select_edge_start(RenderTexture2D target,Node **start, Vector2 mouse_pos)
     } 
 }
 
+// Create an edge between start and end, also updating the neighbors
+// TODO - Refactor this, maybe split up data processing and drawing
 void select_edge_end(RenderTexture2D target, Node **start, Node **end, Vector2 mouse_pos) 
 {   
     if(IsMouseButtonReleased(MOUSE_BUTTON_RIGHT) && CheckCollisionPointCircle(mouse_pos,(*start)->position,CIRCLE_RADIUS)){
@@ -146,7 +154,7 @@ int main(void)
 {
     const int screenWidth = 800;
     const int screenHeight = 800;
-    InitWindow(screenWidth, screenHeight, "A* Visualizer");
+    InitWindow(screenWidth, screenHeight, "Algo Visualizer");
     SetTargetFPS(120);
 
     // Create a RenderTexture2D to use as a canvas
