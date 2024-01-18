@@ -12,7 +12,7 @@ typedef struct Node
 {
     Vector2 position;
     struct Node *neighbors;
-    int size,id,g_cost,h_cost;            
+    int size,id,g_cost,h_cost;
 } Node;
 
 typedef struct Edge
@@ -62,8 +62,17 @@ void add_edge(Edge *edge)
     edges_size++;
 }
 
+// Check and returns Node if mouse_pos collides with it, NULL if it doesn't
+Node *check_node_collision_mouse(Vector2 mouse_pos) {
+    for(int i = 0; i < nodes_size; i++) {
+        if(CheckCollisionPointCircle(mouse_pos,nodes[i].position,CIRCLE_RADIUS))
+            return &nodes[i];
+    }
+    return NULL;
+}
+
 // Draw a singular Node with circle_color, and text as text_color
-void draw_node(Node node, Color circle_color, Color text_color) 
+void draw_node(RenderTexture2D target, Node node, Color circle_color, Color text_color) 
 {
     char id[4] = {0};
     sprintf(id,"%d",node.id);
@@ -72,8 +81,10 @@ void draw_node(Node node, Color circle_color, Color text_color)
     Vector2 text_size = MeasureTextEx(default_font,id,CIRCLE_RADIUS,5);
     Vector2 scale = Vector2Scale(text_size,.5f);
 
+    BeginTextureMode(target);
     DrawCircleV(node.position, CIRCLE_RADIUS, circle_color);
     DrawTextEx(default_font,id,Vector2Subtract(node.position,scale),CIRCLE_RADIUS,5,text_color);
+    EndTextureMode();
 }
 
 // Display edges and nodes
@@ -111,44 +122,77 @@ void clean_up()
 }
 
 // Initiate drawing an edge, handles color
-void select_edge_start(RenderTexture2D target,Node **start, Vector2 mouse_pos) 
+void select_edge_start(RenderTexture2D target,Node **start) 
 {
-   for(int i = 0; i < nodes_size; i++) {
-        if(CheckCollisionPointCircle(mouse_pos,nodes[i].position,CIRCLE_RADIUS)) {
-            *start = &nodes[i];
-            BeginTextureMode(target);
-            draw_node(**start,YELLOW,GREEN);
-            EndTextureMode();
-        }
-    } 
+    draw_node(target,**start,YELLOW,GREEN);
 }
 
 // Create an edge between start and end, also updating the neighbors
 // TODO - Refactor this, maybe split up data processing and drawing
 void select_edge_end(RenderTexture2D target, Node **start, Node **end, Vector2 mouse_pos) 
 {   
-    if(IsMouseButtonReleased(MOUSE_BUTTON_RIGHT) && CheckCollisionPointCircle(mouse_pos,(*start)->position,CIRCLE_RADIUS)){
+    // Check if user clicks the start Node to be the end of the edge
+    if(CheckCollisionPointCircle(mouse_pos,(*start)->position,CIRCLE_RADIUS)){
+        printf("UH-OH!\n");
+        if((*start)->size)      
+            draw_node(target,**start,GREEN,YELLOW);
+        else                    
+            draw_node(target,**start,RED,YELLOW);
+        *start = NULL;
         return;
     }
-    for(int i = 0; i < nodes_size; i++) {
-        if(CheckCollisionPointCircle(mouse_pos,nodes[i].position,CIRCLE_RADIUS)) {
-            *end = &nodes[i];
-            Edge edge = create_edge(*start,*end);
-            add_neighbor(*start,*end);
-            add_neighbor(*end,*start);
 
-            add_edge(&edge);
-            BeginTextureMode(target);
-            DrawLineEx((*start)->position,(*end)->position,3,RAYWHITE);
-            draw_node(**start,GREEN,YELLOW);
-            draw_node(**end,GREEN,YELLOW);
-            EndTextureMode();
+    // Check if user clicks on a node
+    *end = check_node_collision_mouse(mouse_pos);
+    if(end == NULL) 
+        return;
 
-            *start = NULL;
-            *end = NULL;
-        }
-    }
+    Edge edge = create_edge(*start,*end);
+
+    add_neighbor(*start,*end);
+    add_neighbor(*end,*start);
+    add_edge(&edge);
+
+    BeginTextureMode(target);
+    DrawLineEx((*start)->position,(*end)->position,3,RAYWHITE);
+    EndTextureMode();
+
+    draw_node(target,**start,GREEN,YELLOW);
+    draw_node(target,**end,GREEN,YELLOW);
+
+
+    *start = NULL;
+    *end = NULL;
 }
+
+void draw_unconnected_node(RenderTexture2D target) 
+{
+    Vector2 vect = {
+        .x = GetMouseX(),
+        .y = GetMouseY()
+    };
+
+    Node *neighbors = malloc(sizeof(Node) * MAX_NODES);
+    if(neighbors == NULL) {
+        printf("Could not generate neighbors for node\n");
+        return;
+    }
+    Node node = {
+        .position = vect,
+        .neighbors = neighbors,
+        .size = 0,
+        .g_cost = 0,
+        .h_cost = 0,
+        .id = nodes_size
+    };
+    add_node(&node);
+    draw_node(target,node,RED,YELLOW);
+
+    printf("Mouse button clicked at (%d, %d)!\n", GetMouseX(), GetMouseY());
+
+}
+
+
 
 int main(void)
 {
@@ -168,62 +212,40 @@ int main(void)
     Node *edge_start,*edge_end;
     edge_start = NULL;
     edge_end = NULL;
+
+    //
+    // Game loop --------------------------------------------------------------
     while (!WindowShouldClose())
     {
         //
         // Update ---------------------------------------------------------------------
-        /* Draw unconnected nodes */
-        if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
-        {
-            Vector2 vect = {
-                .x = GetMouseX(),
-                .y = GetMouseY()
-            };
-
-            Node *neighbors = malloc(sizeof(Node) * MAX_NODES);
-            if(neighbors == NULL) {
-                printf("Could not generate neighbors for node\n");
-                return -1;
-            }
-            Node node = {
-                .position = vect,
-                .neighbors = neighbors,
-                .size = 0,
-                .g_cost = 0,
-                .h_cost = 0,
-                .id = nodes_size
-            };
-            add_node(&node);
-
-            BeginTextureMode(target);
-            draw_node(node,RED,YELLOW);
-            EndTextureMode();
-
-            printf("Mouse button clicked at (%d, %d)!\n", GetMouseX(), GetMouseY());
-        }
-        /* ---------------------------------------------------------------------------- */
-        /* Draw connected nodes */
-
         Vector2 mouse = GetMousePosition();
-        if(IsMouseButtonReleased(MOUSE_BUTTON_RIGHT)) 
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
-            if(edge_start == NULL) 
-                select_edge_start(target,&edge_start,mouse);
-            else if(edge_start != NULL && edge_end == NULL) 
-                select_edge_end(target,&edge_start,&edge_end,mouse);
+            Node *clicked_node = check_node_collision_mouse(mouse);
+            if(!clicked_node)                                           // Draw unconnected nodes
+                draw_unconnected_node(target);
+            else {
+                if(!edge_start) {                                      // Draw edges
+                    edge_start = clicked_node;
+                    select_edge_start(target,&edge_start);
+                }
+                else if(edge_start != NULL && edge_end == NULL) 
+                    select_edge_end(target,&edge_start,&edge_end,mouse);
+            }
         }
     
         // Show graph
         if(IsKeyPressed(KEY_S)) {
             display_graph();
         }
-        /*-------------------------------------------------------------------------------*/
 
+        // ----------------------------------------------------------------------------
         // Draw
         BeginDrawing();
-        ClearBackground(BACKGROUNDCOLOR);
-        DrawTextureRec(target.texture, (Rectangle){0, 0, (float)target.texture.width, (float)-target.texture.height}, (Vector2){0, 0}, WHITE);
-        DrawFPS(15,15);
+            ClearBackground(BACKGROUNDCOLOR);
+            DrawTextureRec(target.texture, (Rectangle){0, 0, (float)target.texture.width, (float)-target.texture.height}, (Vector2){0, 0}, WHITE);
+            DrawFPS(15,15);
         EndDrawing();
     }
     clean_up();
