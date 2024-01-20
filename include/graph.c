@@ -3,9 +3,6 @@
 #include <stdio.h>
 
 
-// #define MAX_NODES 500
-// #define MAX_EDGES MAX_NODES * (MAX_NODES -1) / 2
-
 // TODO: maybe use ifdef to create a global Graph??? Could be easier than placing graphs into
 // every function.
 
@@ -15,8 +12,8 @@ void graph_init(Graph *graph,int max_nodes)
 {
     graph->max_nodes = max_nodes;
     graph->max_edges = max_nodes*(max_nodes-1);
-    graph->nodes_pool = malloc(sizeof(Node) * graph->max_nodes);
-    graph->edges_pool = malloc(sizeof(Edge) * graph->max_edges);
+    graph->nodes_pool = malloc(sizeof(Node*) * graph->max_nodes);
+    graph->edges_pool = malloc(sizeof(Edge*) * graph->max_edges);
     graph->nodes_pool_size = 0;
     graph->edges_pool_size = 0;
 }
@@ -35,7 +32,7 @@ void graph_destroy(Graph *graph)
 static int graph_add_node(Graph *graph,Node *node) 
 {
     
-    graph->nodes_pool[graph->edges_pool_size] = node;
+    graph->nodes_pool[graph->nodes_pool_size] = node;
     graph->nodes_pool_size++;
     return 0;
 }
@@ -121,11 +118,7 @@ Node* graph_node_adjacents(Graph *graph,Node* node)
 int graph_node_equals(Node* node_1, Node* node_2) {
     if (node_1->neighbors == node_2->neighbors && 
             node_1->adjacent_size == node_2->adjacent_size &&
-            node_1->info == node_2->info) {return 1;}
+            node_1->info == node_2->info) return 1;
     return 0;
 }
 
-
-int main (void) {
-    printf("Hello world!\n");
-}
