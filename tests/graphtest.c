@@ -14,7 +14,6 @@ void test_create_node()
     assert(graph_node_pool_contains(&g,&node1));
     assert(graph_node_pool_contains(&g,&node2));
     assert(graph_node_pool_contains(&g,&node3));
-    
     graph_destroy(&g);
 }
 

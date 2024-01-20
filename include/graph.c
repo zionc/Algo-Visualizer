@@ -1,24 +1,24 @@
 #include "graph.h"
 #include <stdlib.h>
 #include <stdio.h>
-
-
-// TODO: maybe use ifdef to create a global Graph??? Could be easier than placing graphs into
-// every function.
-
+#define NULL (void*)0 // TODO: Temporary fix for now until I figure out why vsc can't recognize NULL >:(
 
 
 void graph_init(Graph *graph,int max_nodes) 
 {
+    graph->nodes_pool_size = 0;
+    graph->edges_pool_size = 0;
     graph->max_nodes = max_nodes;
     graph->max_edges = max_nodes*(max_nodes-1);
     graph->nodes_pool = malloc(sizeof(Node*) * graph->max_nodes);
     graph->edges_pool = malloc(sizeof(Edge*) * graph->max_edges);
-    graph->nodes_pool_size = 0;
-    graph->edges_pool_size = 0;
+    if(graph->nodes_pool == NULL || graph->edges_pool == NULL) {
+        printf("Could not malloc edges or nodes\n");
+        exit(1);
+    }
+
 }
 
-// Free the heap
 void graph_destroy(Graph *graph) 
 {
     for(int i = 0; i < graph->nodes_pool_size; i++) {
