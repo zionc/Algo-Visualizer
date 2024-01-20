@@ -4,14 +4,14 @@
 
 struct Node;
 struct Edge;
-extern int nodes_size,edges_size;
+struct Graph;
 
 typedef struct Node
 {
     struct Node *neighbors;
     int adjacent_size;
     void* info;
-} Node;
+}Node;
 
 typedef struct Edge
 {
@@ -19,23 +19,22 @@ typedef struct Edge
     int weight;
 } Edge;
 
-extern Node* nodes_pool[];
-extern Edge* edges_pool[];
+typedef struct Graph
+{
+    Node **nodes_pool;
+    Edge **edges_pool;
+    int nodes_pool_size, edges_pool_size;
+    int max_nodes, max_edges;
+} Graph;
 
-void graph_connect(Node* from, Node* to);
-void graph_connect_weight(Node* from, Node* to, int weight);
-Node graph_create_node_info(void* info, int default_adjacency_size);
-Node graph_create_node(int default_adjacency_size);
+void graph_connect(Graph *graph,Node* from, Node* to);
+void graph_connect_weight(Graph *graph,Node* from, Node* to, int weight);
+void graph_init(Graph *graph,int max_nodes);
 
-// Edge graph_create_edge_weight(Node* from, Node* to, int weight);
-// Edge graph_create_edge(Node* from, Node* to);
+Node graph_create_node_info(Graph *graph,void* info, int default_adjacency_size);
+Node graph_create_node(Graph *graph,int default_adjacency_size);
 
-int graph_edge_pool_size();
-// int graph_add_node(Node* node);
-// int graph_add_edge(Edge* edge);
-
-int   graph_node_pool_contains(Node* node);
+int   graph_node_pool_contains(Graph *graph,Node* node);
 int   graph_node_contains(Node* node_container, Node* node);
 int   graph_node_equals(Node* node_1, Node* node_2);
-int   graph_node_pool_size();
-Node* graph_node_adjacents(Node* node);
+Node* graph_node_adjacents(Graph *graph,Node* node);

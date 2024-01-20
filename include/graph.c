@@ -1,40 +1,64 @@
 #include "graph.h"
 #include <stdlib.h>
+#include <stdio.h>
 
 
-#define MAX_NODES 500
-#define MAX_EDGES MAX_NODES * (MAX_NODES -1) / 2
+// #define MAX_NODES 500
+// #define MAX_EDGES MAX_NODES * (MAX_NODES -1) / 2
 
-Node* nodes_pool[MAX_NODES] = {0};
-Edge* edges_pool[MAX_EDGES] = {0};
-int nodes_size,edges_size = 0;
+// TODO: maybe use ifdef to create a global Graph??? Could be easier than placing graphs into
+// every function.
 
-static int graph_add_node(Node* node) 
+
+
+void graph_init(Graph *graph,int max_nodes) 
 {
-    nodes_pool[nodes_size] = node;
-    nodes_size++;
+    graph->max_nodes = max_nodes;
+    graph->max_edges = max_nodes*(max_nodes-1);
+    graph->nodes_pool = malloc(sizeof(Node) * graph->max_nodes);
+    graph->edges_pool = malloc(sizeof(Edge) * graph->max_edges);
+    graph->nodes_pool_size = 0;
+    graph->edges_pool_size = 0;
+}
+
+// Free the heap
+void graph_destroy(Graph *graph) 
+{
+    for(int i = 0; i < graph->nodes_pool_size; i++) {
+        free(graph->nodes_pool[i]->neighbors);
+    }
+    free(graph->nodes_pool);
+    free(graph->edges_pool);
+}
+
+
+static int graph_add_node(Graph *graph,Node *node) 
+{
+    
+    graph->nodes_pool[graph->edges_pool_size] = node;
+    graph->nodes_pool_size++;
     return 0;
 }
 
-static int graph_add_edge(Edge* edge)
+static int graph_add_edge(Graph *graph,Edge* edge)
 {
-    edges_pool[edges_size] = edge;
-    edges_size++;
+    graph->edges_pool[graph->edges_pool_size] = edge;
+    graph->edges_pool_size++;
     return 0;
 } 
 
-static Edge graph_create_edge_weight(Node* from, Node* to, int weight)
+static Edge graph_create_edge_weight(Graph *graph,Node* from, Node* to, int weight)
 {
     Edge edge = {from,to,weight};
-    graph_add_edge(&edge);
+    graph_add_edge(graph,&edge);
     return edge;
 }
 
 
-Node graph_create_node_info(void* info, int default_adjacency_size) {
-    if(default_adjacency_size > MAX_NODES) 
+Node graph_create_node_info(Graph *graph,void* info, int default_adjacency_size) {
+    if(default_adjacency_size > graph->max_nodes) 
     {
-        printf("Default adjacency size (%d) > MAX_NODES (%d)\n",default_adjacency_size,MAX_NODES);
+        printf("Default adjacency size (%d) > MAX_NODES (%d)\n",default_adjacency_size,graph->max_nodes);
         exit(1);
     }
     Node* neighbors = malloc(sizeof(Node) * default_adjacency_size);
@@ -45,32 +69,32 @@ Node graph_create_node_info(void* info, int default_adjacency_size) {
     }
 
     Node node = {.neighbors = neighbors, .info = info, .adjacent_size = 0};
-    graph_add_node(&node);
+    graph_add_node(graph,&node);
     return node;
 }
 
-Node graph_create_node(int default_adjacency_size) 
+Node graph_create_node(Graph *graph,int default_adjacency_size) 
 {
-    return graph_create_node_info(NULL,default_adjacency_size);
+    return graph_create_node_info(graph,NULL,default_adjacency_size);
 }
 
 
-void graph_connect_weight(Node* from, Node* to, int weight)
+void graph_connect_weight(Graph *graph,Node* from, Node* to, int weight)
 {
     from->neighbors[from->adjacent_size] = *to;
     from->adjacent_size++;
-    graph_create_edge_weight(from,to,weight);
+    graph_create_edge_weight(graph,from,to,weight);
 }
 
-void graph_connect(Node* from, Node* to) 
+void graph_connect(Graph *graph,Node* from, Node* to) 
 {
-    graph_connect_weight(from,to,0);
+    graph_connect_weight(graph,from,to,0);
 }
 
-int graph_node_pool_contains(Node* node) 
+int graph_node_pool_contains(Graph *graph, Node* node) 
 {
-    for(int i = 0; i < nodes_size; i++) {
-        if(graph_node_equals(nodes_pool[i], node))
+    for(int i = 0; i < graph->nodes_pool_size; i++) {
+        if(graph_node_equals(graph->nodes_pool[i], node))
             return 1;
     }
     return 0;
@@ -84,11 +108,11 @@ int graph_node_contains(Node* node_container, Node* node)
     return 0;
 }
 
-Node* graph_node_adjacents(Node* node) 
+Node* graph_node_adjacents(Graph *graph,Node* node) 
 {
-    for(int i = 0; i < nodes_size; i++) {
-        if(graph_node_equals(nodes_pool[i],node)) {
-            return nodes_pool[i]->neighbors;
+    for(int i = 0; i < graph->nodes_pool_size; i++) {
+        if(graph_node_equals(graph->nodes_pool[i],node)) {
+            return graph->nodes_pool[i]->neighbors;
         }
     }
     return 0;
@@ -101,12 +125,7 @@ int graph_node_equals(Node* node_1, Node* node_2) {
     return 0;
 }
 
-void graph_clean() {
-    for(int i = 0; i < nodes_size; i++) {
-        free(nodes_pool[i]->neighbors);
-    }
+
+int main (void) {
+    printf("Hello world!\n");
 }
-
-int graph_node_pool_size(){return nodes_size;}
-int graph_edge_pool_size(){return edges_size;}
-
