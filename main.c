@@ -2,37 +2,14 @@
 #include <stdlib.h>
 #include "include/raylib.h"
 #include "include/raymath.h"
+#include "include/graph.h"
 
-#define MAX_NODES 100
 #define BACKGROUNDCOLOR BLACK
 #define CIRCLE_RADIUS 20.f
+#define MAX_NODES 500
 
+Graph g = {0};
 
-typedef struct Node
-{
-    Vector2 position;
-    struct Node *neighbors;
-    int size,id,g_cost,h_cost;
-} Node;
-
-typedef struct Edge
-{
-    Vector2 start,end;
-    Node *node_start, *node_end;
-    int weight;
-
-} Edge;
-
-Node nodes[MAX_NODES] = {0};
-Edge edges[(MAX_NODES * (MAX_NODES -1)) / 2];
-int nodes_size,edges_size = 0;
-
-// Add node to pool of nodes
-void add_node(Node *node)
-{
-    nodes[nodes_size] = *node;
-    nodes_size++;
-}
 
 // Add neighbor to root
 void add_neighbor(Node *root, Node *neigbor) 
@@ -208,6 +185,8 @@ int main(void)
     BeginTextureMode(target);
     ClearBackground(BACKGROUNDCOLOR);
     EndTextureMode();
+
+    graph_init(&graph,MAX_NODES);
 
     Node *edge_start,*edge_end;
     edge_start = NULL;

@@ -4,7 +4,7 @@
 #define NULL (void*)0 // TODO: Temporary fix for now until I figure out why vsc can't recognize NULL >:(
 
 
-void graph_init(Graph *graph,int max_nodes) 
+void graph_init(Graph *graph,int max_nodes, void *extra_mem) 
 {
     graph->nodes_pool_size = 0;
     graph->edges_pool_size = 0;
@@ -14,6 +14,15 @@ void graph_init(Graph *graph,int max_nodes)
     graph->edges_pool = malloc(sizeof(Edge*) * graph->max_edges);
     if(graph->nodes_pool == NULL || graph->edges_pool == NULL) {
         printf("Could not malloc edges or nodes\n");
+        exit(1);
+    }
+    if(extra_mem == NULL) {
+        graph->info = NULL;
+        return;
+    } 
+    graph->info = malloc(sizeof(void *) * graph->max_nodes);
+    if(graph->info == NULL) {
+        printf("Could no malloc info struct for graph\n");
         exit(1);
     }
 
@@ -26,6 +35,7 @@ void graph_destroy(Graph *graph)
     }
     free(graph->nodes_pool);
     free(graph->edges_pool);
+    
 }
 
 

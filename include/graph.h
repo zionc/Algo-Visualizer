@@ -18,6 +18,7 @@ typedef struct Graph
 {
     Node **nodes_pool;
     Edge **edges_pool;
+    void **info;
     int nodes_pool_size, edges_pool_size;
     int max_nodes, max_edges;
 } Graph;
@@ -27,7 +28,7 @@ void graph_connect(Graph *graph,Node* from, Node* to);
 // Create edge between from and to with weight
 void graph_connect_weight(Graph *graph,Node* from, Node* to, int weight);
 // Initialize graph with maximum number of nodes, max_nodes
-void graph_init(Graph *graph,int max_nodes);
+void graph_init(Graph *graph,int max_nodes, void *extra_members);
 // Free the heap from the graph
 void graph_destroy(Graph *graph);
 

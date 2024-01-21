@@ -2,10 +2,16 @@
 #include <stdio.h>
 #include <assert.h>
 
+
+typedef struct args{
+    int id;
+    char *label;
+} args;
+
 void test_create_node()
 {
     Graph g = {0};
-    graph_init(&g,100);
+    graph_init(&g,100,NULL);
     Node node1 = graph_create_node(&g,10);
     Node node2 = graph_create_node(&g,30);
     Node node3 = graph_create_node(&g,10);
@@ -20,7 +26,7 @@ void test_create_node()
 void test_graph_connect()
 {
     Graph g = {0};
-    graph_init(&g,100);
+    graph_init(&g,100,NULL);
     Node node1 = graph_create_node(&g,2);
     Node node2 = graph_create_node(&g,5);
     Node node3 = graph_create_node(&g,10);
@@ -58,7 +64,7 @@ void test_graph_connect()
 void test_node_equal()
 {
     Graph g = {0};
-    graph_init(&g,100);
+    graph_init(&g,100,NULL);
 
     Node node1 = graph_create_node(&g,5);
     Node node2 = graph_create_node(&g,5);
@@ -70,7 +76,15 @@ void test_node_equal()
     graph_destroy(&g);
 }  
 
+// void test_graph_add_info() {
+//     Graph g = {0};
+//     graph_init(&g,500);
+
+//     graph_destroy(&g);
+// }
+
 int main(void) {
     test_create_node();
     test_graph_connect();
+    test_node_equal();
 }
