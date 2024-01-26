@@ -4,3 +4,5 @@ CFLAGS = -Wall -Wextra
 OUT = -o graphtest
 graphtest: graphtest.c 
 	$(CC) $(CFLAGS) $(CFILES) $(OUT)
+clean:
+	rm -f graphtest
