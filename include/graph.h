@@ -41,7 +41,7 @@ void graph_init(Graph *graph,int max_nodes);
 void graph_destroy(Graph *graph);
 
 // Create node 
-Node *graph_create_node(Graph *graph);
+Node *graph_create_node(Graph *graph,Vector2 position, Color color, int id);
 
 // Create node with struct pointer, struct_p
 Node *graph_create_node_args(Graph *graph, void *struct_p,int size_of_struct);

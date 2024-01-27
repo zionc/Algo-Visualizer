@@ -68,16 +68,16 @@ void display_graph()
 
 
 // Initiate drawing an edge, handles color
-void select_edge_start(RenderTexture2D target,Node **start) 
+void select_edge_start(RenderTexture2D target,Node *start) 
 {
-    draw_node(target,**start,YELLOW,GREEN);
+    draw_node(target,*start,YELLOW,GREEN);
 }
 
 // Create an edge between start and end, also updating the neighbors
 // TODO - Refactor this, maybe split up data processing and drawing
 void select_edge_end(RenderTexture2D target, Node **start, Node **end, Vector2 mouse_pos) 
 {   
-    // Check if user clicks the start Node to be the end of the edge
+    // Return if user clicks the start Node to be the end of the edge
     if(CheckCollisionPointCircle(mouse_pos,(*start)->position,CIRCLE_RADIUS)){
         if((*start)->adjacent_size)      
             draw_node(target,**start,GREEN,YELLOW);
@@ -116,34 +116,16 @@ void draw_unconnected_node(RenderTexture2D target)
         .x = GetMouseX(),
         .y = GetMouseY()
     };
-
-    Node *neighbors = malloc(sizeof(Node) * MAX_NODES);
-    if(neighbors == NULL) {
-        printf("Could not generate neighbors for node\n");
-        return;
-    }
-    
-    Node *node      = graph_create_node(&g);
-    node->position  = vect;
-    node->neighbors = neighbors;
-    node->args      = NULL;
-    node->id        = g.nodes_pool_size;
-    node->color     = RED;
-
+    Node *node = graph_create_node(&g,vect,RED,g.nodes_pool_size);
     draw_node(target,*node,RED,YELLOW);
-
-    printf("Mouse button clicked at (%d, %d)!\n", GetMouseX(), GetMouseY());
-
 }
-
-
 
 int main(void)
 {
     const int screenWidth = 800;
     const int screenHeight = 800;
     InitWindow(screenWidth, screenHeight, "Algo Visualizer");
-    SetTargetFPS(120);
+    SetTargetFPS(240);
 
     // Create a RenderTexture2D to use as a canvas
     RenderTexture2D target = LoadRenderTexture(screenWidth, screenHeight);
@@ -174,7 +156,7 @@ int main(void)
             else {
                 if(!edge_start) {                                       // Draw edges
                     edge_start = clicked_node;
-                    select_edge_start(target,&edge_start);
+                    select_edge_start(target,edge_start);
                 }
                 else if(edge_start != NULL && edge_end == NULL) 
                     select_edge_end(target,&edge_start,&edge_end,mouse);
