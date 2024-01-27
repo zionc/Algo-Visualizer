@@ -1,28 +1,31 @@
 #include "graph.h"
 #include <stdlib.h>
 #include <stdio.h>
-#define NULL (void*)0 // TODO: Temporary fix for now until I figure out why vsc can't recognize NULL >:(
 
-
-void graph_init(Graph *graph,int max_nodes) 
+void graph_init(Graph *graph,int m_nodes) 
 {
     graph->nodes_pool_size = 0;
     graph->edges_pool_size = 0;
-    graph->max_nodes = max_nodes;
-    graph->max_edges = max_nodes*(max_nodes-1);
+    graph->max_nodes = m_nodes;
+    graph->max_edges = m_nodes*(m_nodes-1);
     graph->nodes_pool = malloc(sizeof(Node*) * graph->max_nodes);
     graph->edges_pool = malloc(sizeof(Edge*) * graph->max_edges);
     if(graph->nodes_pool == NULL || graph->edges_pool == NULL) {
         printf("Could not malloc edges or nodes\n");
         exit(1);
     }
-
 }
 
 void graph_destroy(Graph *graph) 
 {
     for(int i = 0; i < graph->nodes_pool_size; i++) {
         free(graph->nodes_pool[i]->neighbors);
+        if(graph->nodes_pool[i]->args != NULL)
+            free(graph->nodes_pool[i]->args);
+        free(graph->nodes_pool[i]);
+    }
+    for(int i = 0; i < graph->edges_pool_size; i++) { 
+        free(graph->edges_pool[i]);
     }
     free(graph->nodes_pool);
     free(graph->edges_pool);
@@ -31,7 +34,6 @@ void graph_destroy(Graph *graph)
 
 static int graph_add_node(Graph *graph,Node *node) 
 {
-    
     graph->nodes_pool[graph->nodes_pool_size] = node;
     graph->nodes_pool_size++;
     return 0;
@@ -44,37 +46,70 @@ static int graph_add_edge(Graph *graph,Edge* edge)
     return 0;
 } 
 
-static Edge graph_create_edge_weight(Graph *graph,Node* from, Node* to, int weight)
+static Edge *graph_create_edge_weight(Graph *graph,Node* from, Node* to, int weight)
 {
-    Edge edge = {from,to,weight};
-    graph_add_edge(graph,&edge);
+    Edge *edge = malloc(sizeof(Edge));
+    if(edge == NULL) {
+        printf("Could not malloc edge.");
+        return NULL;
+    }
+    edge->node_from = from;
+    edge->node_to   = to;
+    edge->weight    = weight;
+    graph_add_edge(graph,edge);
     return edge;
 }
 
-
-Node graph_create_node_info(Graph *graph,void* info, int default_adjacency_size) {
-    if(default_adjacency_size > graph->max_nodes) 
+Node *graph_create_node(Graph *graph,Vector2 position, Color color, int id) 
+{
+    if(graph->nodes_pool_size >= graph->max_nodes)
     {
-        printf("Default adjacency size (%d) > MAX_NODES (%d)\n",default_adjacency_size,graph->max_nodes);
+        printf("Attempted to add new node when maximum number of nodes met, returning\n");
+        return NULL;
+    }
+    Node* neighbors = malloc(sizeof(Node) * (graph->max_nodes -1));
+    if(neighbors == NULL)
+    {
+        printf("Could not malloc more neighbors\n");
         exit(1);
     }
-    Node* neighbors = malloc(sizeof(Node) * default_adjacency_size);
-    if(neighbors == NULL)
+
+    Node *node = malloc(sizeof(Node));
+    if(node == NULL)
     {
         printf("Could not create node\n");
         exit(1);
     }
-
-    Node node = {.neighbors = neighbors, .info = info, .adjacent_size = 0};
-    graph_add_node(graph,&node);
+    
+    node->neighbors      = neighbors;
+    node->adjacent_size  = 0;
+    node->args           = NULL;
+    node->position       = position;
+    node->color          = color;
+    node->id             = id;
+    graph_add_node(graph,node);
     return node;
 }
 
-Node graph_create_node(Graph *graph,int default_adjacency_size) 
-{
-    return graph_create_node_info(graph,NULL,default_adjacency_size);
-}
+// Who needs generics when we have pointers, amiright? TAKE THAT JAVA!
+// Node *graph_create_node_args(Graph *graph, void *struct_p,int size_of_struct) 
+// {
+//     Node *node = graph_create_node(graph);
 
+//     char *pack_arguments = malloc(sizeof(char) * size_of_struct);   
+//     if(pack_arguments == NULL) {
+//         printf("Could not malloc struct arguments\n");
+//         exit(1);
+//     }
+
+//     for(int i = 0; i < size_of_struct; i++) {                      
+//         pack_arguments[i] = ((char *)struct_p)[i];
+//     }
+
+//     node->args = (char*)pack_arguments;         
+    
+//     return node;
+// }
 
 void graph_connect_weight(Graph *graph,Node* from, Node* to, int weight)
 {
@@ -107,18 +142,15 @@ int graph_node_contains(Node* node_container, Node* node)
 
 Node* graph_node_adjacents(Graph *graph,Node* node) 
 {
-    for(int i = 0; i < graph->nodes_pool_size; i++) {
-        if(graph_node_equals(graph->nodes_pool[i],node)) {
-            return graph->nodes_pool[i]->neighbors;
-        }
-    }
+    if(graph_node_pool_contains(graph,node))
+        return node->neighbors;
     return 0;
 }
 
-int graph_node_equals(Node* node_1, Node* node_2) {
+int graph_node_equals(Node* node_1, Node* node_2) 
+{
     if (node_1->neighbors == node_2->neighbors && 
-            node_1->adjacent_size == node_2->adjacent_size &&
-            node_1->info == node_2->info) return 1;
+            node_1->adjacent_size == node_2->adjacent_size) return 1;
     return 0;
 }
 
