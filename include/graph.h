@@ -1,10 +1,15 @@
 #ifndef GRAPH_H
 #define GRAPH_H
+#include "raylib.h"
+#include "raymath.h"
 
 typedef struct Node
 {
     struct Node *neighbors;
     int adjacent_size;
+    Vector2 position;
+    Color color;
+    int id;
     char *args;
 }Node;
 
@@ -45,13 +50,13 @@ Node *graph_create_node_args(Graph *graph, void *struct_p,int size_of_struct);
 Node* graph_node_adjacents(Graph *graph,Node* node);
 
 // Check if node exists in graph
-int   graph_node_pool_contains(Graph *graph,Node* node);
+int graph_node_pool_contains(Graph *graph,Node* node);
 
 // Check if node is adjacent to node_container
-int   graph_node_contains(Node* node_container, Node* node);
+int graph_node_contains(Node* node_container, Node* node);
 
 // Test node_1 and node_2 for equality
-int   graph_node_equals(Node* node_1, Node* node_2);
+int graph_node_equals(Node* node_1, Node* node_2);
 
 
 #endif

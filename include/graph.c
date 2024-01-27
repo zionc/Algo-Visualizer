@@ -24,6 +24,9 @@ void graph_destroy(Graph *graph)
             free(graph->nodes_pool[i]->args);
         free(graph->nodes_pool[i]);
     }
+    for(int i = 0; i < graph->edges_pool_size; i++) { 
+        free(graph->edges_pool[i]);
+    }
     free(graph->nodes_pool);
     free(graph->edges_pool);
 }
@@ -43,10 +46,17 @@ static int graph_add_edge(Graph *graph,Edge* edge)
     return 0;
 } 
 
-static Edge graph_create_edge_weight(Graph *graph,Node* from, Node* to, int weight)
+static Edge *graph_create_edge_weight(Graph *graph,Node* from, Node* to, int weight)
 {
-    Edge edge = {from,to,weight};
-    graph_add_edge(graph,&edge);
+    Edge *edge = malloc(sizeof(Edge));
+    if(edge == NULL) {
+        printf("Could not malloc edge.");
+        return NULL;
+    }
+    edge->node_from = from;
+    edge->node_to   = to;
+    edge->weight    = weight;
+    graph_add_edge(graph,edge);
     return edge;
 }
 
@@ -61,7 +71,7 @@ Node *graph_create_node(Graph *graph)
     Node* neighbors = malloc(sizeof(Node) * (graph->max_nodes -1));
     if(neighbors == NULL)
     {
-        printf("Could not create node\n");
+        printf("Could not malloc more neighbors\n");
         exit(1);
     }
 
@@ -106,7 +116,6 @@ void graph_connect_weight(Graph *graph,Node* from, Node* to, int weight)
     from->neighbors[from->adjacent_size] = *to;
     from->adjacent_size++;
     graph_create_edge_weight(graph,from,to,weight);
-
 }
 
 void graph_connect(Graph *graph,Node* from, Node* to) 
@@ -133,11 +142,8 @@ int graph_node_contains(Node* node_container, Node* node)
 
 Node* graph_node_adjacents(Graph *graph,Node* node) 
 {
-    for(int i = 0; i < graph->nodes_pool_size; i++) {
-        if(graph_node_equals(graph->nodes_pool[i],node)) {
-            return graph->nodes_pool[i]->neighbors;
-        }
-    }
+    if(graph_node_pool_contains(graph,node))
+        return node->neighbors;
     return 0;
 }
 

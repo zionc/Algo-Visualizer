@@ -8,42 +8,18 @@
 #define CIRCLE_RADIUS 20.f
 #define MAX_NODES 500
 
+
+// Graph entry point
 Graph g = {0};
 
 
-// Add neighbor to root
-void add_neighbor(Node *root, Node *neigbor) 
-{
-    root->neighbors[root->size] = *neigbor;
-    root->size++;
-}
-
-// Create edge, using distance between two vectors as it's weight
-Edge create_edge(Node *start, Node *end) 
-{
-    int distance = Vector2Distance(start->position,end->position);
-    Edge edge = {
-        .start = start->position,
-        .end = end->position,
-        .node_start = start,
-        .node_end = end,
-        .weight = distance
-    };
-    return edge;
-}
-
-// Add edge to pool of edges
-void add_edge(Edge *edge) 
-{
-    edges[edges_size] = *edge;
-    edges_size++;
-}
-
 // Check and returns Node if mouse_pos collides with it, NULL if it doesn't
-Node *check_node_collision_mouse(Vector2 mouse_pos) {
-    for(int i = 0; i < nodes_size; i++) {
-        if(CheckCollisionPointCircle(mouse_pos,nodes[i].position,CIRCLE_RADIUS))
-            return &nodes[i];
+Node *check_node_collision_mouse(Vector2 mouse_pos) 
+{
+    for(int i = 0; i < g.nodes_pool_size; i++) {
+        Node *node = g.nodes_pool[i];
+        if(CheckCollisionPointCircle(mouse_pos,node->position,CIRCLE_RADIUS))
+            return node;
     }
     return NULL;
 }
@@ -68,35 +44,28 @@ void draw_node(RenderTexture2D target, Node node, Color circle_color, Color text
 // TODO - A lot going on here...
 void display_graph() 
 {
-    if(nodes_size == 0) {
+    if(g.nodes_pool_size == 0) {
         printf("No nodes drawn\n");
         return;
     }
     printf("--------------------- Nodes ---------------------\n");
-    for(int i = 0; i < nodes_size; i++) {
-        Node node = nodes[i];
-        printf("Node [%d] Size = %d -> [",node.id,node.size);
-        for(int j = 0; j < node.size; j++) {
-            if(j == node.size -1) printf("%d",node.neighbors[j].id);
-            else printf("%d,",node.neighbors[j].id);
+    for(int i = 0; i < g.nodes_pool_size; i++) {
+        Node *node = g.nodes_pool[i];
+        printf("Node [%d] Size = %d -> [",node->id,node->adjacent_size);
+        for(int j = 0; j < node->adjacent_size; j++) {
+            if(j == node->adjacent_size -1) printf("%d",node->neighbors[j].id);
+            else printf("%d,",node->neighbors[j].id);
         }
         printf("]\n");   
     }
     printf("--------------------- Edges ---------------------\n");
-    printf("Number of edges: %d\n",edges_size);
-    for(int i = 0; i < edges_size; i++) {
-        Edge edge = edges[i];
-        printf("%d <---> %d (Weight: %d)\n",edge.node_start->id,edge.node_end->id,edge.weight);
+    printf("Number of edges: %d\n",g.edges_pool_size);
+    for(int i = 0; i < g.edges_pool_size; i++) {
+        Edge *edge = g.edges_pool[i];
+        printf("%d <---> %d (Weight: %d)\n",edge->node_from->id,edge->node_to->id,edge->weight);
     }
 }
 
-// Free the heap!
-void clean_up() 
-{
-    for(int i = 0; i < nodes_size; i++) {
-        free(nodes[i].neighbors);
-    }
-}
 
 // Initiate drawing an edge, handles color
 void select_edge_start(RenderTexture2D target,Node **start) 
@@ -110,8 +79,7 @@ void select_edge_end(RenderTexture2D target, Node **start, Node **end, Vector2 m
 {   
     // Check if user clicks the start Node to be the end of the edge
     if(CheckCollisionPointCircle(mouse_pos,(*start)->position,CIRCLE_RADIUS)){
-        printf("UH-OH!\n");
-        if((*start)->size)      
+        if((*start)->adjacent_size)      
             draw_node(target,**start,GREEN,YELLOW);
         else                    
             draw_node(target,**start,RED,YELLOW);
@@ -119,16 +87,16 @@ void select_edge_end(RenderTexture2D target, Node **start, Node **end, Vector2 m
         return;
     }
 
-    // Check if user clicks on a node
+    // Return if user doesn't click on a node
     *end = check_node_collision_mouse(mouse_pos);
     if(end == NULL) 
         return;
 
-    Edge edge = create_edge(*start,*end);
+    // Calculate weight based on distance
+    int distance = Vector2Distance((*start)->position,(*end)->position);
+    graph_connect_weight(&g,*start,*end,distance);
+    graph_connect_weight(&g,*end,*start,distance);
 
-    add_neighbor(*start,*end);
-    add_neighbor(*end,*start);
-    add_edge(&edge);
 
     BeginTextureMode(target);
     DrawLineEx((*start)->position,(*end)->position,3,RAYWHITE);
@@ -154,16 +122,15 @@ void draw_unconnected_node(RenderTexture2D target)
         printf("Could not generate neighbors for node\n");
         return;
     }
-    Node node = {
-        .position = vect,
-        .neighbors = neighbors,
-        .size = 0,
-        .g_cost = 0,
-        .h_cost = 0,
-        .id = nodes_size
-    };
-    add_node(&node);
-    draw_node(target,node,RED,YELLOW);
+    
+    Node *node      = graph_create_node(&g);
+    node->position  = vect;
+    node->neighbors = neighbors;
+    node->args      = NULL;
+    node->id        = g.nodes_pool_size;
+    node->color     = RED;
+
+    draw_node(target,*node,RED,YELLOW);
 
     printf("Mouse button clicked at (%d, %d)!\n", GetMouseX(), GetMouseY());
 
@@ -186,7 +153,7 @@ int main(void)
     ClearBackground(BACKGROUNDCOLOR);
     EndTextureMode();
 
-    graph_init(&graph,MAX_NODES);
+    graph_init(&g,MAX_NODES);
 
     Node *edge_start,*edge_end;
     edge_start = NULL;
@@ -205,7 +172,7 @@ int main(void)
             if(!clicked_node)                                           // Draw unconnected nodes
                 draw_unconnected_node(target);
             else {
-                if(!edge_start) {                                      // Draw edges
+                if(!edge_start) {                                       // Draw edges
                     edge_start = clicked_node;
                     select_edge_start(target,&edge_start);
                 }
@@ -227,7 +194,7 @@ int main(void)
             DrawFPS(15,15);
         EndDrawing();
     }
-    clean_up();
+    graph_destroy(&g);
     CloseWindow();
 
     return 0;

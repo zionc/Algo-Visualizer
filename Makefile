@@ -5,5 +5,6 @@ CFILES = main.c ./include/graph.c
 CFLAGS = -Wall -Wextra
 main: main.c 
 	$(CC) $(CFLAGS) $(CFILES) $(OSX_OUT) $(OSX_OPT)
-
+clean:
+	rm -f main
 	
