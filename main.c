@@ -98,26 +98,56 @@ void select_edge_end(RenderTexture2D target, Node **start, Node **end, Vector2 m
     graph_connect_weight(&g,*end,*start,distance);
 
 
-    BeginTextureMode(target);
-    DrawLineEx((*start)->position,(*end)->position,3,RAYWHITE);
-    EndTextureMode();
+    // BeginTextureMode(target);
+    // DrawLineEx((*start)->position,(*end)->position,3,RAYWHITE);
+    // EndTextureMode();
 
-    draw_node(target,**start,GREEN,YELLOW);
-    draw_node(target,**end,GREEN,YELLOW);
+    // draw_node(target,**start,GREEN,YELLOW);
+    // draw_node(target,**end,GREEN,YELLOW);
 
 
     *start = NULL;
     *end = NULL;
 }
 
-void draw_unconnected_node(RenderTexture2D target) 
+void register_new_node() 
 {
     Vector2 vect = {
         .x = GetMouseX(),
         .y = GetMouseY()
     };
-    Node *node = graph_create_node(&g,vect,RED,g.nodes_pool_size);
-    draw_node(target,*node,RED,YELLOW);
+    graph_create_node(&g,vect,RED,g.nodes_pool_size);
+}
+
+void draw_nodes()
+{
+    for(int i = 0; i < g.nodes_pool_size; i++) {
+        Node node = *g.nodes_pool[i];
+        DrawCircleV(node.position,CIRCLE_RADIUS,node.color);
+    }
+}
+
+void draw_edges() 
+{
+    for(int i = 0; i < g.edges_pool_size; i++) {
+        Edge edge = *g.edges_pool[i];
+        DrawLineV(edge.node_from->position,edge.node_to->position,RAYWHITE);
+    }
+}
+
+void draw_node_text()
+{
+    for(int i = 0; i < g.nodes_pool_size; i++) {
+        Node node = *g.nodes_pool[i];
+        char id[4] = {0};
+        sprintf(id,"%d",node.id);
+
+        Font default_font = GetFontDefault();
+        Vector2 text_size = MeasureTextEx(default_font,id,CIRCLE_RADIUS,5);
+        Vector2 scale = Vector2Scale(text_size,.5f);
+
+        DrawTextEx(default_font,id,Vector2Subtract(node.position,scale),CIRCLE_RADIUS,5,GREEN);
+    }
 }
 
 int main(void)
@@ -126,14 +156,6 @@ int main(void)
     const int screenHeight = 800;
     InitWindow(screenWidth, screenHeight, "Algo Visualizer");
     SetTargetFPS(240);
-
-    // Create a RenderTexture2D to use as a canvas
-    RenderTexture2D target = LoadRenderTexture(screenWidth, screenHeight);
-
-    // Clear render texture before entering the game loop
-    BeginTextureMode(target);
-    ClearBackground(BACKGROUNDCOLOR);
-    EndTextureMode();
 
     graph_init(&g,MAX_NODES);
 
@@ -147,21 +169,12 @@ int main(void)
     {
         //
         // Update ---------------------------------------------------------------------
-        Vector2 mouse = GetMousePosition();
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        
+        if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
         {
-            Node *clicked_node = check_node_collision_mouse(mouse);
-            if(!clicked_node)                                           // Draw unconnected nodes
-                draw_unconnected_node(target);
-            else {
-                if(!edge_start) {                                       // Draw edges
-                    edge_start = clicked_node;
-                    select_edge_start(target,edge_start);
-                }
-                else if(edge_start != NULL && edge_end == NULL) 
-                    select_edge_end(target,&edge_start,&edge_end,mouse);
-            }
+            register_new_node();
         }
+        
     
         // Show graph
         if(IsKeyPressed(KEY_S)) {
@@ -172,7 +185,9 @@ int main(void)
         // Draw
         BeginDrawing();
             ClearBackground(BACKGROUNDCOLOR);
-            DrawTextureRec(target.texture, (Rectangle){0, 0, (float)target.texture.width, (float)-target.texture.height}, (Vector2){0, 0}, WHITE);
+            draw_edges();
+            draw_nodes();
+            draw_node_text();
             DrawFPS(15,15);
         EndDrawing();
     }
