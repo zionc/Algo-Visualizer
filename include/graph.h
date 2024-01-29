@@ -3,6 +3,13 @@
 #include "raylib.h"
 #include "raymath.h"
 
+typedef enum {
+    UNCONNECTED,  
+    HOVERING,
+    SELECTED,
+    CONNECTED,
+}NodeState;
+
 typedef struct Node
 {
     struct Node *neighbors;
@@ -11,6 +18,7 @@ typedef struct Node
     Color color;
     int id;
     char *args;
+    NodeState state;
 }Node;
 
 typedef struct Edge
@@ -28,6 +36,7 @@ typedef struct Graph
 } Graph;
 
 
+
 // Create edge between from and to
 void graph_connect(Graph *graph,Node* from, Node* to);
 
@@ -41,7 +50,7 @@ void graph_init(Graph *graph,int max_nodes);
 void graph_destroy(Graph *graph);
 
 // Create node 
-Node *graph_create_node(Graph *graph,Vector2 position, Color color, int id);
+Node *graph_create_node(Graph *graph,Vector2 position,int id, NodeState state);
 
 // Create node with struct pointer, struct_p
 Node *graph_create_node_args(Graph *graph, void *struct_p,int size_of_struct);

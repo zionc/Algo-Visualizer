@@ -116,14 +116,35 @@ void register_new_node()
         .x = GetMouseX(),
         .y = GetMouseY()
     };
-    graph_create_node(&g,vect,RED,g.nodes_pool_size);
+    graph_create_node(&g,vect,g.nodes_pool_size,UNCONNECTED);
+}
+
+void register_new_edge(Node *start, Node *end)
+{
+    int distance = Vector2Distance(start->position,end->position);
+    graph_connect_weight(&g,start,end,distance);
 }
 
 void draw_nodes()
 {
     for(int i = 0; i < g.nodes_pool_size; i++) {
-        Node node = *g.nodes_pool[i];
-        DrawCircleV(node.position,CIRCLE_RADIUS,node.color);
+        Node *node = g.nodes_pool[i];
+        NodeState state = node->state;
+        switch (state)
+        {
+        case UNCONNECTED:
+            node->color = RED;
+            break;
+        case CONNECTED:
+            node->color = BLUE;
+            break;
+        case SELECTED:
+            node->color = YELLOW;
+            break;
+        default:
+            break;
+        }
+        DrawCircleV(node->position,CIRCLE_RADIUS,node->color);
     }
 }
 
@@ -131,7 +152,7 @@ void draw_edges()
 {
     for(int i = 0; i < g.edges_pool_size; i++) {
         Edge edge = *g.edges_pool[i];
-        DrawLineV(edge.node_from->position,edge.node_to->position,RAYWHITE);
+        DrawLineEx(edge.node_from->position,edge.node_to->position,CIRCLE_RADIUS/7,RAYWHITE);
     }
 }
 
@@ -170,9 +191,30 @@ int main(void)
         //
         // Update ---------------------------------------------------------------------
         
-        if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
+        Vector2 mouse_pos = GetMousePosition();
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
-            register_new_node();
+            // Edge logic
+            Node *clicked_node = check_node_collision_mouse(mouse_pos);
+            if(clicked_node != NULL && edge_start == NULL) {          
+                clicked_node->state = SELECTED;
+                edge_start  = clicked_node;
+            } 
+            else if(clicked_node != NULL && edge_start != NULL && edge_start != clicked_node) {     
+                clicked_node->state       = CONNECTED;
+                edge_start->state         = CONNECTED;
+                register_new_edge(edge_start,clicked_node);
+                edge_start = NULL;
+            }
+            else if(clicked_node == NULL && edge_start != NULL) {
+                if(edge_start->adjacent_size == 0) 
+                    edge_start->state = UNCONNECTED;
+                else
+                    edge_start->state = CONNECTED;
+                edge_start = NULL;
+            }
+            else if(clicked_node == NULL && edge_start == NULL)
+                register_new_node();
         }
         
     
