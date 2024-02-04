@@ -97,15 +97,6 @@ void select_edge_end(RenderTexture2D target, Node **start, Node **end, Vector2 m
     graph_connect_weight(&g,*start,*end,distance);
     graph_connect_weight(&g,*end,*start,distance);
 
-
-    // BeginTextureMode(target);
-    // DrawLineEx((*start)->position,(*end)->position,3,RAYWHITE);
-    // EndTextureMode();
-
-    // draw_node(target,**start,GREEN,YELLOW);
-    // draw_node(target,**end,GREEN,YELLOW);
-
-
     *start = NULL;
     *end = NULL;
 }
@@ -123,6 +114,7 @@ void register_new_edge(Node *start, Node *end)
 {
     int distance = Vector2Distance(start->position,end->position);
     graph_connect_weight(&g,start,end,distance);
+    graph_connect_weight(&g,end,start,distance);
 }
 
 void draw_nodes()
@@ -183,7 +175,8 @@ int main(void)
     Node *edge_start,*edge_end;
     edge_start = NULL;
     edge_end = NULL;
-
+    bool state_Moving_Nodes = false;
+    Node *clicked_node;
     //
     // Game loop --------------------------------------------------------------
     while (!WindowShouldClose())
@@ -191,18 +184,22 @@ int main(void)
         //
         // Update ---------------------------------------------------------------------
         
-        Vector2 mouse_pos = GetMousePosition();
+
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
             // Edge logic
-            Node *clicked_node = check_node_collision_mouse(mouse_pos);
+            Vector2 mouse_pos = GetMousePosition();
+            clicked_node = check_node_collision_mouse(mouse_pos);
+            if(IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+                state_Moving_Nodes = true;
+            }
             if(clicked_node != NULL && edge_start == NULL) {          
                 clicked_node->state = SELECTED;
                 edge_start  = clicked_node;
             } 
             else if(clicked_node != NULL && edge_start != NULL && edge_start != clicked_node) {     
-                clicked_node->state       = CONNECTED;
-                edge_start->state         = CONNECTED;
+                clicked_node->state = CONNECTED;
+                edge_start->state   = CONNECTED;
                 register_new_edge(edge_start,clicked_node);
                 edge_start = NULL;
             }
@@ -216,6 +213,13 @@ int main(void)
             else if(clicked_node == NULL && edge_start == NULL)
                 register_new_node();
         }
+        if(state_Moving_Nodes && clicked_node) {
+            clicked_node->position = GetMousePosition();
+            if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+                state_Moving_Nodes = false;
+            }
+        }
+        
         
     
         // Show graph
