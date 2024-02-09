@@ -132,11 +132,9 @@ int main(void)
 
     graph_init(&g,MAX_NODES);
 
-    Node *edge_start,*edge_end;
-    edge_start = NULL;
-    edge_end = NULL;
+    Node *edge_start = NULL;
     bool state_Moving_Nodes = false;
-    Node *clicked_node;
+    Node *clicked_node = NULL;
     //
     // Game loop --------------------------------------------------------------
     while (!WindowShouldClose())
@@ -184,9 +182,10 @@ int main(void)
             }
         }
         
+        // update weights
         update_edge_weights();
 
-        // Show graph
+        // Show graph stdout
         if(IsKeyPressed(KEY_S)) {
             display_graph();
         }

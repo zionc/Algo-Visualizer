@@ -8,7 +8,7 @@ typedef enum {
     HOVERING,
     SELECTED,
     CONNECTED,
-}NodeState;
+} NodeState;
 
 typedef struct Node
 {
