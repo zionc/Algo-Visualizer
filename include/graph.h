@@ -12,14 +12,14 @@ typedef enum {
 
 typedef struct Node
 {
-    struct Node *neighbors;
+    struct Node *neighbors;  
     int adjacent_size;
-    Vector2 position;
-    Color color;
     int id;
     char *args;
+    Vector2 position;
+    Color color;
     NodeState state;
-}Node;
+} Node;
 
 typedef struct Edge
 {

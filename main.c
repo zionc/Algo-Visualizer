@@ -114,6 +114,15 @@ void draw_node_text()
     }
 }
 
+void update_edge_weights() 
+{
+    for(int i = 0; i < g.edges_pool_size; i++) {
+        Edge *edge = g.edges_pool[i];
+        int weight = Vector2Distance(edge->node_from->position,edge->node_to->position);
+        edge->weight = weight;
+    }
+}
+
 int main(void)
 {
     const int screenWidth = 800;
@@ -135,15 +144,16 @@ int main(void)
         //
         // Update ---------------------------------------------------------------------
         
-
+        // Edge Logic
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
-            // Edge logic
             Vector2 mouse_pos = GetMousePosition();
             clicked_node = check_node_collision_mouse(mouse_pos);
+
             if(IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
                 state_Moving_Nodes = true;
             }
+
             if(clicked_node != NULL && edge_start == NULL) {          
                 clicked_node->state = SELECTED;
                 edge_start  = clicked_node;
@@ -161,9 +171,12 @@ int main(void)
                     edge_start->state = CONNECTED;
                 edge_start = NULL;
             }
-            else if(clicked_node == NULL && edge_start == NULL)
+            else if(clicked_node == NULL && edge_start == NULL) {
                 register_new_node();
+            }
         }
+
+        // Drag logic
         if(state_Moving_Nodes && clicked_node) {
             clicked_node->position = GetMousePosition();
             if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
@@ -171,8 +184,8 @@ int main(void)
             }
         }
         
-        
-    
+        update_edge_weights();
+
         // Show graph
         if(IsKeyPressed(KEY_S)) {
             display_graph();
