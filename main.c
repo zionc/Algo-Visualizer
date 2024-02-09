@@ -179,11 +179,10 @@ int main(void)
             clicked_node->position = GetMousePosition();
             if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
                 state_Moving_Nodes = false;
+                update_edge_weights();
             }
         }
-        
-        // update weights
-        update_edge_weights();
+
 
         // Show graph stdout
         if(IsKeyPressed(KEY_S)) {
