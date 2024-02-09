@@ -24,21 +24,6 @@ Node *check_node_collision_mouse(Vector2 mouse_pos)
     return NULL;
 }
 
-// Draw a singular Node with circle_color, and text as text_color
-void draw_node(RenderTexture2D target, Node node, Color circle_color, Color text_color) 
-{
-    char id[4] = {0};
-    sprintf(id,"%d",node.id);
-
-    Font default_font = GetFontDefault();
-    Vector2 text_size = MeasureTextEx(default_font,id,CIRCLE_RADIUS,5);
-    Vector2 scale = Vector2Scale(text_size,.5f);
-
-    BeginTextureMode(target);
-    DrawCircleV(node.position, CIRCLE_RADIUS, circle_color);
-    DrawTextEx(default_font,id,Vector2Subtract(node.position,scale),CIRCLE_RADIUS,5,text_color);
-    EndTextureMode();
-}
 
 // Display edges and nodes
 // TODO - A lot going on here...
@@ -66,40 +51,6 @@ void display_graph()
     }
 }
 
-
-// Initiate drawing an edge, handles color
-void select_edge_start(RenderTexture2D target,Node *start) 
-{
-    draw_node(target,*start,YELLOW,GREEN);
-}
-
-// Create an edge between start and end, also updating the neighbors
-// TODO - Refactor this, maybe split up data processing and drawing
-void select_edge_end(RenderTexture2D target, Node **start, Node **end, Vector2 mouse_pos) 
-{   
-    // Return if user clicks the start Node to be the end of the edge
-    if(CheckCollisionPointCircle(mouse_pos,(*start)->position,CIRCLE_RADIUS)){
-        if((*start)->adjacent_size)      
-            draw_node(target,**start,GREEN,YELLOW);
-        else                    
-            draw_node(target,**start,RED,YELLOW);
-        *start = NULL;
-        return;
-    }
-
-    // Return if user doesn't click on a node
-    *end = check_node_collision_mouse(mouse_pos);
-    if(end == NULL) 
-        return;
-
-    // Calculate weight based on distance
-    int distance = Vector2Distance((*start)->position,(*end)->position);
-    graph_connect_weight(&g,*start,*end,distance);
-    graph_connect_weight(&g,*end,*start,distance);
-
-    *start = NULL;
-    *end = NULL;
-}
 
 void register_new_node() 
 {
