@@ -24,21 +24,6 @@ Node *check_node_collision_mouse(Vector2 mouse_pos)
     return NULL;
 }
 
-// Draw a singular Node with circle_color, and text as text_color
-void draw_node(RenderTexture2D target, Node node, Color circle_color, Color text_color) 
-{
-    char id[4] = {0};
-    sprintf(id,"%d",node.id);
-
-    Font default_font = GetFontDefault();
-    Vector2 text_size = MeasureTextEx(default_font,id,CIRCLE_RADIUS,5);
-    Vector2 scale = Vector2Scale(text_size,.5f);
-
-    BeginTextureMode(target);
-    DrawCircleV(node.position, CIRCLE_RADIUS, circle_color);
-    DrawTextEx(default_font,id,Vector2Subtract(node.position,scale),CIRCLE_RADIUS,5,text_color);
-    EndTextureMode();
-}
 
 // Display edges and nodes
 // TODO - A lot going on here...
@@ -67,57 +52,75 @@ void display_graph()
 }
 
 
-// Initiate drawing an edge, handles color
-void select_edge_start(RenderTexture2D target,Node *start) 
-{
-    draw_node(target,*start,YELLOW,GREEN);
-}
-
-// Create an edge between start and end, also updating the neighbors
-// TODO - Refactor this, maybe split up data processing and drawing
-void select_edge_end(RenderTexture2D target, Node **start, Node **end, Vector2 mouse_pos) 
-{   
-    // Return if user clicks the start Node to be the end of the edge
-    if(CheckCollisionPointCircle(mouse_pos,(*start)->position,CIRCLE_RADIUS)){
-        if((*start)->adjacent_size)      
-            draw_node(target,**start,GREEN,YELLOW);
-        else                    
-            draw_node(target,**start,RED,YELLOW);
-        *start = NULL;
-        return;
-    }
-
-    // Return if user doesn't click on a node
-    *end = check_node_collision_mouse(mouse_pos);
-    if(end == NULL) 
-        return;
-
-    // Calculate weight based on distance
-    int distance = Vector2Distance((*start)->position,(*end)->position);
-    graph_connect_weight(&g,*start,*end,distance);
-    graph_connect_weight(&g,*end,*start,distance);
-
-
-    BeginTextureMode(target);
-    DrawLineEx((*start)->position,(*end)->position,3,RAYWHITE);
-    EndTextureMode();
-
-    draw_node(target,**start,GREEN,YELLOW);
-    draw_node(target,**end,GREEN,YELLOW);
-
-
-    *start = NULL;
-    *end = NULL;
-}
-
-void draw_unconnected_node(RenderTexture2D target) 
+void register_new_node() 
 {
     Vector2 vect = {
         .x = GetMouseX(),
         .y = GetMouseY()
     };
-    Node *node = graph_create_node(&g,vect,RED,g.nodes_pool_size);
-    draw_node(target,*node,RED,YELLOW);
+    graph_create_node(&g,vect,g.nodes_pool_size,UNCONNECTED);
+}
+
+void register_new_edge(Node *start, Node *end)
+{
+    int distance = Vector2Distance(start->position,end->position);
+    graph_connect_weight(&g,start,end,distance);
+    graph_connect_weight(&g,end,start,distance);
+}
+
+void draw_nodes()
+{
+    for(int i = 0; i < g.nodes_pool_size; i++) {
+        Node *node = g.nodes_pool[i];
+        NodeState state = node->state;
+        switch (state)
+        {
+        case UNCONNECTED:
+            node->color = RED;
+            break;
+        case CONNECTED:
+            node->color = BLUE;
+            break;
+        case SELECTED:
+            node->color = YELLOW;
+            break;
+        default:
+            break;
+        }
+        DrawCircleV(node->position,CIRCLE_RADIUS,node->color);
+    }
+}
+
+void draw_edges() 
+{
+    for(int i = 0; i < g.edges_pool_size; i++) {
+        Edge edge = *g.edges_pool[i];
+        DrawLineEx(edge.node_from->position,edge.node_to->position,CIRCLE_RADIUS/7,RAYWHITE);
+    }
+}
+
+void draw_node_text()
+{
+    for(int i = 0; i < g.nodes_pool_size; i++) {
+        Node node = *g.nodes_pool[i];
+        char id[4] = {0};
+        sprintf(id,"%d",node.id);
+
+        Font default_font = GetFontDefault();
+        Vector2 text_size = MeasureTextEx(default_font,id,CIRCLE_RADIUS,5);
+        Vector2 scale = Vector2Scale(text_size,.5f);
+
+        DrawTextEx(default_font,id,Vector2Subtract(node.position,scale),CIRCLE_RADIUS,5,GREEN);
+    }
+}
+
+void update_edge_weights() 
+{
+    for(int i = 0; i < g.edges_pool_size; i++) {
+        Edge *edge = g.edges_pool[i];
+        int weight = Vector2Distance(edge->node_from->position,edge->node_to->position);
+        edge->weight = weight;
+    }
 }
 
 int main(void)
@@ -127,43 +130,61 @@ int main(void)
     InitWindow(screenWidth, screenHeight, "Algo Visualizer");
     SetTargetFPS(240);
 
-    // Create a RenderTexture2D to use as a canvas
-    RenderTexture2D target = LoadRenderTexture(screenWidth, screenHeight);
-
-    // Clear render texture before entering the game loop
-    BeginTextureMode(target);
-    ClearBackground(BACKGROUNDCOLOR);
-    EndTextureMode();
-
     graph_init(&g,MAX_NODES);
 
-    Node *edge_start,*edge_end;
-    edge_start = NULL;
-    edge_end = NULL;
-
+    Node *edge_start = NULL;
+    bool state_Moving_Nodes = false;
+    Node *clicked_node = NULL;
     //
     // Game loop --------------------------------------------------------------
     while (!WindowShouldClose())
     {
         //
         // Update ---------------------------------------------------------------------
-        Vector2 mouse = GetMousePosition();
+        
+        // Edge Logic
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
-            Node *clicked_node = check_node_collision_mouse(mouse);
-            if(!clicked_node)                                           // Draw unconnected nodes
-                draw_unconnected_node(target);
-            else {
-                if(!edge_start) {                                       // Draw edges
-                    edge_start = clicked_node;
-                    select_edge_start(target,edge_start);
-                }
-                else if(edge_start != NULL && edge_end == NULL) 
-                    select_edge_end(target,&edge_start,&edge_end,mouse);
+            Vector2 mouse_pos = GetMousePosition();
+            clicked_node = check_node_collision_mouse(mouse_pos);
+
+            if(IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+                state_Moving_Nodes = true;
+            }
+
+            if(clicked_node != NULL && edge_start == NULL) {          
+                clicked_node->state = SELECTED;
+                edge_start  = clicked_node;
+            } 
+            else if(clicked_node != NULL && edge_start != NULL && edge_start != clicked_node) {     
+                clicked_node->state = CONNECTED;
+                edge_start->state   = CONNECTED;
+                register_new_edge(edge_start,clicked_node);
+                edge_start = NULL;
+            }
+            else if(clicked_node == NULL && edge_start != NULL) {
+                if(edge_start->adjacent_size == 0) 
+                    edge_start->state = UNCONNECTED;
+                else
+                    edge_start->state = CONNECTED;
+                edge_start = NULL;
+            }
+            else if(clicked_node == NULL && edge_start == NULL) {
+                register_new_node();
             }
         }
-    
-        // Show graph
+
+        // Drag logic
+        if(state_Moving_Nodes && clicked_node) {
+            clicked_node->position = GetMousePosition();
+            if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+                state_Moving_Nodes = false;
+                update_edge_weights();
+            }
+        }
+
+
+        // Show graph stdout
         if(IsKeyPressed(KEY_S)) {
             display_graph();
         }
@@ -172,7 +193,9 @@ int main(void)
         // Draw
         BeginDrawing();
             ClearBackground(BACKGROUNDCOLOR);
-            DrawTextureRec(target.texture, (Rectangle){0, 0, (float)target.texture.width, (float)-target.texture.height}, (Vector2){0, 0}, WHITE);
+            draw_edges();
+            draw_nodes();
+            draw_node_text();
             DrawFPS(15,15);
         EndDrawing();
     }
