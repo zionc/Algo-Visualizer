@@ -123,6 +123,15 @@ void update_edge_weights()
     }
 }
 
+Node *dfs_to(Node *from, Node *to) {
+    // Node *visited = malloc(sizeof(Node) * g.nodes_pool_size);
+
+}
+
+Node *dfs_helper(Node *from, Node *to, Node *visited) {
+
+}
+
 int main(void)
 {
     const int screenWidth = 800;
@@ -135,6 +144,8 @@ int main(void)
     Node *edge_start = NULL;
     bool state_Moving_Nodes = false;
     Node *clicked_node = NULL;
+    Node *start = NULL;
+    Node *end = NULL;
     //
     // Game loop --------------------------------------------------------------
     while (!WindowShouldClose())
@@ -180,6 +191,21 @@ int main(void)
             if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
                 state_Moving_Nodes = false;
                 update_edge_weights();
+            }
+        }
+
+        if(IsMouseButtonReleased(MOUSE_BUTTON_RIGHT)) {
+            Node *node = check_node_collision_mouse(GetMousePosition());
+            if(node != NULL && start == NULL) {
+                start = node;
+                printf("Start --> %d\n",start->id);
+            }
+            else if(node != NULL && start != NULL) {
+                end   = node;
+                dfs_to(start,end);
+                printf("End --> %d\n", end->id);
+                start = NULL;
+                end   = NULL;
             }
         }
 
