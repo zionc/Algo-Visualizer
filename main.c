@@ -3,7 +3,7 @@
 #include "include/raylib.h"
 #include "include/raymath.h"
 #include "include/graph.h"
-
+#include <string.h>
 #define BACKGROUNDCOLOR BLACK
 #define CIRCLE_RADIUS 20.f
 #define MAX_NODES 500
@@ -38,8 +38,8 @@ void display_graph()
         Node *node = g.nodes_pool[i];
         printf("Node [%d] Size = %d -> [",node->id,node->adjacent_size);
         for(int j = 0; j < node->adjacent_size; j++) {
-            if(j == node->adjacent_size -1) printf("%d",node->neighbors[j].id);
-            else printf("%d,",node->neighbors[j].id);
+            if(j == node->adjacent_size -1) printf("%d",node->neighbors[j]->id);
+            else printf("%d,",node->neighbors[j]->id);
         }
         printf("]\n");   
     }
@@ -123,14 +123,39 @@ void update_edge_weights()
     }
 }
 
+Node *dfs_helper(Node *from, Node *to, bool *visited) {
+    if(from->id == to->id) {
+        printf("Found: %d\n", to->id);
+        return from;
+    }
+    else {
+        printf("Visited: %d, has %d neighbors.\n", from->id, from->adjacent_size);
+        visited[from->id] = true;
+        Node *node = NULL;
+        for(int i = 0; i < from->adjacent_size; i++) {
+            Node *neighbor = from->neighbors[i];
+            int neighbor_index = neighbor->id;
+            if(visited[neighbor_index] != true) {
+                printf("From: %d, searching: %d\n",from->id,neighbor->id);
+                node = dfs_helper(neighbor,to,visited);
+            }
+            if(node == to) break;
+        }
+        return node;
+    }
+}
+
 Node *dfs_to(Node *from, Node *to) {
-    // Node *visited = malloc(sizeof(Node) * g.nodes_pool_size);
-
+    bool *visited = malloc(sizeof(bool) * g.nodes_pool_size);
+    Node *node = dfs_helper(from,to,visited);
+    if(node == NULL)
+        printf("Could not find Node %d from Node %d\n",from->id,to->id);
+    else
+        printf("Path found from Node %d to Node %d\n",from->id,to->id);
+    free(visited);
+    return node;
 }
 
-Node *dfs_helper(Node *from, Node *to, Node *visited) {
-
-}
 
 int main(void)
 {
@@ -202,8 +227,8 @@ int main(void)
             }
             else if(node != NULL && start != NULL) {
                 end   = node;
-                dfs_to(start,end);
                 printf("End --> %d\n", end->id);
+                dfs_to(start,end);
                 start = NULL;
                 end   = NULL;
             }

@@ -67,7 +67,7 @@ Node *graph_create_node(Graph *graph,Vector2 position, int id, NodeState state)
         printf("Attempted to add new node when maximum number of nodes met, returning\n");
         return NULL;
     }
-    Node* neighbors = malloc(sizeof(Node) * (graph->max_nodes -1));
+    Node **neighbors = malloc(sizeof(Node*) * (graph->max_nodes -1));
     if(neighbors == NULL)
     {
         printf("Could not malloc more neighbors\n");
@@ -113,7 +113,7 @@ Node *graph_create_node(Graph *graph,Vector2 position, int id, NodeState state)
 
 void graph_connect_weight(Graph *graph,Node* from, Node* to, int weight)
 {
-    from->neighbors[from->adjacent_size] = *to;
+    from->neighbors[from->adjacent_size] = to;
     from->adjacent_size++;
     graph_create_edge_weight(graph,from,to,weight);
 }
@@ -135,12 +135,12 @@ int graph_node_pool_contains(Graph *graph, Node* node)
 int graph_node_contains(Node* node_container, Node* node) 
 {
     for(int i = 0; i < node_container->adjacent_size; i++) {
-        if(graph_node_equals(&node_container->neighbors[i],node)) return 1;
+        if(graph_node_equals(node_container->neighbors[i],node)) return 1;
     }
     return 0;
 }
 
-Node* graph_node_adjacents(Graph *graph,Node* node) 
+Node **graph_node_adjacents(Graph *graph,Node* node) 
 {
     if(graph_node_pool_contains(graph,node))
         return node->neighbors;
