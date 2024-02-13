@@ -12,7 +12,7 @@ typedef enum {
 
 typedef struct Node
 {
-    struct Node *neighbors;  
+    struct Node **neighbors;  
     int adjacent_size;
     int id;
     char *args;
@@ -56,7 +56,7 @@ Node *graph_create_node(Graph *graph,Vector2 position,int id, NodeState state);
 Node *graph_create_node_args(Graph *graph, void *struct_p,int size_of_struct);
 
 // Get the adjacent list of Nodes
-Node* graph_node_adjacents(Graph *graph,Node* node);
+Node **graph_node_adjacents(Graph *graph,Node* node);
 
 // Check if node exists in graph
 int graph_node_pool_contains(Graph *graph,Node* node);
