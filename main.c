@@ -171,7 +171,7 @@ void animate_dfs_edges(Edge **edges_to_animate) {
     int i = 0;
     while(edges_to_animate[i] != 0) {
         Edge *edge = edges_to_animate[i];
-        DrawLineEx(edge->node_from->position,edge->node_to->position,CIRCLE_RADIUS/7,YELLOW);
+        DrawLineEx(edge->node_from->position,edge->node_to->position,CIRCLE_RADIUS/6,YELLOW);
         i++;
     }
 }
@@ -182,7 +182,7 @@ int main(void)
     const int screenWidth = 800;
     const int screenHeight = 800;
     InitWindow(screenWidth, screenHeight, "Algo Visualizer");
-    SetTargetFPS(60);
+    SetTargetFPS(120);
 
     graph_init(&g,MAX_NODES);
 
@@ -193,7 +193,7 @@ int main(void)
     Node *end = NULL;
     Edge **paths = NULL;
     //
-    // Game loop --------------------------------------------------------------
+    // Game loop  ---------------------------------------------------------------------
     while (!WindowShouldClose())
     {
         //
@@ -262,21 +262,17 @@ int main(void)
             display_graph();
         }
 
+        // 
         // ----------------------------------------------------------------------------
         // Draw
+
+        // TODO: This is terrible
         BeginDrawing();
             ClearBackground(BACKGROUNDCOLOR);
-            if(STATE == DRAWING) {
-                draw_edges();
-                draw_nodes();
-                draw_node_text();
-            }
-            else {
-                draw_edges();
-                animate_dfs_edges(paths);
-                draw_nodes();
-                draw_node_text();
-            }
+            draw_edges();
+            if(STATE == ANIMATING) animate_dfs_edges(paths);
+            draw_nodes();
+            draw_node_text();
             DrawFPS(15,15);
         EndDrawing();
     }
