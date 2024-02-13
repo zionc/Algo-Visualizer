@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "include/raylib.h"
-#include "include/raymath.h"
-#include "include/graph.h"
+#include "raylib.h"
+#include "raymath.h"
+#include "graph.h"
 #include <string.h>
 #define BACKGROUNDCOLOR BLACK
 #define CIRCLE_RADIUS 20.f
@@ -12,6 +12,13 @@
 // Graph entry point
 Graph g = {0};
 
+typedef enum GameState {
+    DRAWING,
+    ANIMATING,
+} GameState;
+
+// Current state of the program
+GameState STATE = DRAWING;
 
 // Check and returns Node if mouse_pos collides with it, NULL if it doesn't
 Node *check_node_collision_mouse(Vector2 mouse_pos) 
@@ -123,21 +130,23 @@ void update_edge_weights()
     }
 }
 
-Node *dfs_helper(Node *from, Node *to, bool *visited) {
+Node *dfs_helper(Node *from, Node *to, bool *visited, Edge **edges_visited,int *index) {
     if(from->id == to->id) {
-        printf("Found: %d\n", to->id);
         return from;
     }
     else {
-        printf("Visited: %d, has %d neighbors.\n", from->id, from->adjacent_size);
         visited[from->id] = true;
         Node *node = NULL;
         for(int i = 0; i < from->adjacent_size; i++) {
             Node *neighbor = from->neighbors[i];
             int neighbor_index = neighbor->id;
             if(visited[neighbor_index] != true) {
-                printf("From: %d, searching: %d\n",from->id,neighbor->id);
-                node = dfs_helper(neighbor,to,visited);
+                for(int j = 0; j < g.edges_pool_size; j++) {
+                    if(g.edges_pool[j]->node_from == from && g.edges_pool[j]->node_to == neighbor)
+                        edges_visited[*index] = g.edges_pool[j];
+                }
+                *index = *index + 1;
+                node = dfs_helper(neighbor,to,visited,edges_visited,index);
             }
             if(node == to) break;
         }
@@ -145,15 +154,26 @@ Node *dfs_helper(Node *from, Node *to, bool *visited) {
     }
 }
 
-Node *dfs_to(Node *from, Node *to) {
-    bool *visited = malloc(sizeof(bool) * g.nodes_pool_size);
-    Node *node = dfs_helper(from,to,visited);
+Edge **search_dfs(Node *from, Node *to) {
+    Edge **edges_visited = calloc(g.edges_pool_size,sizeof(Edge*));
+    bool *visited        = malloc(sizeof(bool) * g.nodes_pool_size);
+    int edges_index = 0;
+    Node *node = dfs_helper(from,to,visited,edges_visited,&edges_index);
+    free(visited);
     if(node == NULL)
         printf("Could not find Node %d from Node %d\n",from->id,to->id);
     else
         printf("Path found from Node %d to Node %d\n",from->id,to->id);
-    free(visited);
-    return node;
+    return edges_visited;
+}
+
+void animate_dfs_edges(Edge **edges_to_animate) {
+    int i = 0;
+    while(edges_to_animate[i] != 0) {
+        Edge *edge = edges_to_animate[i];
+        DrawLineEx(edge->node_from->position,edge->node_to->position,CIRCLE_RADIUS/7,YELLOW);
+        i++;
+    }
 }
 
 
@@ -162,7 +182,7 @@ int main(void)
     const int screenWidth = 800;
     const int screenHeight = 800;
     InitWindow(screenWidth, screenHeight, "Algo Visualizer");
-    SetTargetFPS(240);
+    SetTargetFPS(60);
 
     graph_init(&g,MAX_NODES);
 
@@ -171,6 +191,7 @@ int main(void)
     Node *clicked_node = NULL;
     Node *start = NULL;
     Node *end = NULL;
+    Edge **paths = NULL;
     //
     // Game loop --------------------------------------------------------------
     while (!WindowShouldClose())
@@ -228,7 +249,8 @@ int main(void)
             else if(node != NULL && start != NULL) {
                 end   = node;
                 printf("End --> %d\n", end->id);
-                dfs_to(start,end);
+                paths = search_dfs(start,end);
+                STATE = ANIMATING;
                 start = NULL;
                 end   = NULL;
             }
@@ -244,13 +266,22 @@ int main(void)
         // Draw
         BeginDrawing();
             ClearBackground(BACKGROUNDCOLOR);
-            draw_edges();
-            draw_nodes();
-            draw_node_text();
+            if(STATE == DRAWING) {
+                draw_edges();
+                draw_nodes();
+                draw_node_text();
+            }
+            else {
+                draw_edges();
+                animate_dfs_edges(paths);
+                draw_nodes();
+                draw_node_text();
+            }
             DrawFPS(15,15);
         EndDrawing();
     }
     graph_destroy(&g);
+    if(paths) free(paths);
     CloseWindow();
 
     return 0;

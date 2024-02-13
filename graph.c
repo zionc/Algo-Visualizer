@@ -1,6 +1,6 @@
-#include "graph.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include "graph.h"
 
 void graph_init(Graph *graph,int m_nodes) 
 {
