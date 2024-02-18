@@ -17,6 +17,12 @@ typedef enum GameState {
     ANIMATING,
 } GameState;
 
+typedef struct AnimateEdges {
+    Edge **edges;               // Path of edges we want to animate
+    int current_index;          // Current path we want to animate
+    float current_scale;        // Current distance we want to draw in each frame
+} AnimateEdges;
+
 // Current state of the program
 GameState STATE = DRAWING;
 
@@ -167,13 +173,42 @@ Edge **search_dfs(Node *from, Node *to) {
     return edges_visited;
 }
 
-void animate_dfs_edges(Edge **edges_to_animate) {
-    int i = 0;
-    while(edges_to_animate[i] != 0) {
-        Edge *edge = edges_to_animate[i];
-        DrawLineEx(edge->node_from->position,edge->node_to->position,CIRCLE_RADIUS/6,YELLOW);
-        i++;
+
+void animate_dfs_edges(AnimateEdges *edges_animation) 
+{
+    // Draw paths we've already processed
+    for(int i = 0; i < edges_animation->current_index; i++) {
+        Edge *edge = edges_animation->edges[i];
+        DrawLineEx(edge->node_from->position,edge->node_to->position,CIRCLE_RADIUS/4,YELLOW);
     }
+
+    if(edges_animation->edges[edges_animation->current_index] == 0) {
+        return;
+    }
+
+    // Animate current edge
+    Edge *edge  = edges_animation->edges[edges_animation->current_index]; 
+    float scale = edges_animation->current_scale;
+    Vector2 draw_to_vector = Vector2MoveTowards(edge->node_from->position, edge->node_to->position,scale);
+    DrawLineEx(edge->node_from->position,draw_to_vector,CIRCLE_RADIUS/4,YELLOW);
+    edges_animation->current_scale++;
+    if(edges_animation->current_scale == edge->weight) {
+        edges_animation->current_index++;
+        edges_animation->current_scale = 0.f;
+    }
+
+
+    // int i = 0;
+    // while(edges_to_animate[i] != 0) {
+    //     Edge *edge = edges_to_animate[i];
+    //     float j = 0.f;
+    //     while(j < (float)edge->weight) {
+    //         Vector2 scale = Vector2MoveTowards(edge->node_from->position,edge->node_to->position,(float)j);
+    //         DrawLineEx(edge->node_from->position,scale,CIRCLE_RADIUS/5,YELLOW);
+    //         j+=0.005f;
+    //     }
+    //     i++;
+    // }
 }
 
 
@@ -182,7 +217,7 @@ int main(void)
     const int screenWidth = 800;
     const int screenHeight = 800;
     InitWindow(screenWidth, screenHeight, "Algo Visualizer");
-    SetTargetFPS(120);
+    SetTargetFPS(60);
 
     graph_init(&g,MAX_NODES);
 
@@ -191,14 +226,14 @@ int main(void)
     Node *clicked_node = NULL;
     Node *start = NULL;
     Node *end = NULL;
-    Edge **paths = NULL;
-    //
+    AnimateEdges *animate_edges = malloc(sizeof(AnimateEdges));
+    
     // Game loop  ---------------------------------------------------------------------
     while (!WindowShouldClose())
     {
         //
         // Update ---------------------------------------------------------------------
-        
+
         // Edge Logic
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
@@ -240,6 +275,7 @@ int main(void)
             }
         }
 
+        // Set start/end of path
         if(IsMouseButtonReleased(MOUSE_BUTTON_RIGHT)) {
             Node *node = check_node_collision_mouse(GetMousePosition());
             if(node != NULL && start == NULL) {
@@ -249,7 +285,10 @@ int main(void)
             else if(node != NULL && start != NULL) {
                 end   = node;
                 printf("End --> %d\n", end->id);
-                paths = search_dfs(start,end);
+                Edge **paths = search_dfs(start,end);
+                animate_edges->edges = paths;
+                animate_edges->current_index = 0;
+                animate_edges->current_scale = 0.f;
                 STATE = ANIMATING;
                 start = NULL;
                 end   = NULL;
@@ -270,14 +309,15 @@ int main(void)
         BeginDrawing();
             ClearBackground(BACKGROUNDCOLOR);
             draw_edges();
-            if(STATE == ANIMATING) animate_dfs_edges(paths);
+            if(STATE == ANIMATING) animate_dfs_edges(animate_edges);
             draw_nodes();
             draw_node_text();
             DrawFPS(15,15);
         EndDrawing();
     }
     graph_destroy(&g);
-    if(paths) free(paths);
+    if(animate_edges->edges) free(animate_edges->edges);
+    free(animate_edges);
     CloseWindow();
 
     return 0;
