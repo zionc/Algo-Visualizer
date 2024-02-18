@@ -191,24 +191,11 @@ void animate_dfs_edges(AnimateEdges *edges_animation)
     float scale = edges_animation->current_scale;
     Vector2 draw_to_vector = Vector2MoveTowards(edge->node_from->position, edge->node_to->position,scale);
     DrawLineEx(edge->node_from->position,draw_to_vector,CIRCLE_RADIUS/4,YELLOW);
-    edges_animation->current_scale++;
-    if(edges_animation->current_scale == edge->weight) {
+    edges_animation->current_scale+=2;
+    if(edges_animation->current_scale >= edge->weight) {
         edges_animation->current_index++;
         edges_animation->current_scale = 0.f;
     }
-
-
-    // int i = 0;
-    // while(edges_to_animate[i] != 0) {
-    //     Edge *edge = edges_to_animate[i];
-    //     float j = 0.f;
-    //     while(j < (float)edge->weight) {
-    //         Vector2 scale = Vector2MoveTowards(edge->node_from->position,edge->node_to->position,(float)j);
-    //         DrawLineEx(edge->node_from->position,scale,CIRCLE_RADIUS/5,YELLOW);
-    //         j+=0.005f;
-    //     }
-    //     i++;
-    // }
 }
 
 
@@ -217,7 +204,7 @@ int main(void)
     const int screenWidth = 800;
     const int screenHeight = 800;
     InitWindow(screenWidth, screenHeight, "Algo Visualizer");
-    SetTargetFPS(60);
+    SetTargetFPS(120);
 
     graph_init(&g,MAX_NODES);
 
@@ -285,6 +272,7 @@ int main(void)
             else if(node != NULL && start != NULL) {
                 end   = node;
                 printf("End --> %d\n", end->id);
+                if(animate_edges->edges!= NULL) free(animate_edges->edges);
                 Edge **paths = search_dfs(start,end);
                 animate_edges->edges = paths;
                 animate_edges->current_index = 0;
