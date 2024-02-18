@@ -97,6 +97,18 @@ void draw_nodes()
         case SELECTED:
             node->color = YELLOW;
             break;
+        case ANIMATED_START:
+            node->color = GREEN;
+            break;
+        case ANIMATED_END:
+            node->color = GREEN;
+            break;
+        case ANIMATED_UNVISITED:
+            node->color = GRAY;
+            break;
+        case ANIMATED_VISITED:
+            node->color = RED;
+            break;
         default:
             break;
         }
@@ -123,7 +135,7 @@ void draw_node_text()
         Vector2 text_size = MeasureTextEx(default_font,id,CIRCLE_RADIUS,5);
         Vector2 scale = Vector2Scale(text_size,.5f);
 
-        DrawTextEx(default_font,id,Vector2Subtract(node.position,scale),CIRCLE_RADIUS,5,GREEN);
+        DrawTextEx(default_font,id,Vector2Subtract(node.position,scale),CIRCLE_RADIUS,5,BLACK);
     }
 }
 
@@ -163,6 +175,10 @@ Node *dfs_helper(Node *from, Node *to, bool *visited, Edge **edges_visited,int *
 Edge **search_dfs(Node *from, Node *to) {
     Edge **edges_visited = calloc(g.edges_pool_size,sizeof(Edge*));
     bool *visited        = malloc(sizeof(bool) * g.nodes_pool_size);
+    if(edges_visited == NULL || visited == NULL) {
+        printf("search_dfs: Failed to malloc\n");
+        exit(1);
+    }
     int edges_index = 0;
     Node *node = dfs_helper(from,to,visited,edges_visited,&edges_index);
     free(visited);
@@ -182,6 +198,7 @@ void animate_dfs_edges(AnimateEdges *edges_animation)
         DrawLineEx(edge->node_from->position,edge->node_to->position,CIRCLE_RADIUS/4,YELLOW);
     }
 
+    // If there are no more edges to animate, return
     if(edges_animation->edges[edges_animation->current_index] == 0) {
         return;
     }
@@ -190,11 +207,18 @@ void animate_dfs_edges(AnimateEdges *edges_animation)
     Edge *edge  = edges_animation->edges[edges_animation->current_index]; 
     float scale = edges_animation->current_scale;
     Vector2 draw_to_vector = Vector2MoveTowards(edge->node_from->position, edge->node_to->position,scale);
-    DrawLineEx(edge->node_from->position,draw_to_vector,CIRCLE_RADIUS/4,YELLOW);
-    edges_animation->current_scale+=2;
+    DrawLineEx(edge->node_from->position,draw_to_vector,CIRCLE_RADIUS/3.5f,YELLOW);
+    // DrawSplineSegmentLinear(edge->node_from->position,draw_to_vector,CIRCLE_RADIUS/4,YELLOW);
+
+    // How fast we want to animate
+    edges_animation->current_scale+=1.5f;
+
+    // Move on to next edge
     if(edges_animation->current_scale >= edge->weight) {
         edges_animation->current_index++;
         edges_animation->current_scale = 0.f;
+        if(edge->node_to->state != ANIMATED_END)
+            edge->node_to->state = ANIMATED_VISITED;
     }
 }
 
@@ -204,7 +228,7 @@ int main(void)
     const int screenWidth = 800;
     const int screenHeight = 800;
     InitWindow(screenWidth, screenHeight, "Algo Visualizer");
-    SetTargetFPS(120);
+    SetTargetFPS(60);
 
     graph_init(&g,MAX_NODES);
 
@@ -214,6 +238,10 @@ int main(void)
     Node *start = NULL;
     Node *end = NULL;
     AnimateEdges *animate_edges = malloc(sizeof(AnimateEdges));
+    if(animate_edges == NULL) {
+        printf("main: Could not malloc edges for animation\n");
+        exit(1);
+    }
     
     // Game loop  ---------------------------------------------------------------------
     while (!WindowShouldClose())
@@ -267,6 +295,7 @@ int main(void)
             Node *node = check_node_collision_mouse(GetMousePosition());
             if(node != NULL && start == NULL) {
                 start = node;
+                start->state = ANIMATED_START;
                 printf("Start --> %d\n",start->id);
             }
             else if(node != NULL && start != NULL) {
@@ -277,10 +306,18 @@ int main(void)
                 animate_edges->edges = paths;
                 animate_edges->current_index = 0;
                 animate_edges->current_scale = 0.f;
+
+                // Gray out nodes
+                for(int i = 0; i < g.nodes_pool_size; i++) {
+                    if(g.nodes_pool[i] != start)
+                        g.nodes_pool[i]->state = ANIMATED_UNVISITED;
+                }
+                end->state   = ANIMATED_END;
                 STATE = ANIMATING;
                 start = NULL;
                 end   = NULL;
             }
+            else start = NULL;
         }
 
 
@@ -293,7 +330,6 @@ int main(void)
         // ----------------------------------------------------------------------------
         // Draw
 
-        // TODO: This is terrible
         BeginDrawing();
             ClearBackground(BACKGROUNDCOLOR);
             draw_edges();
