@@ -195,7 +195,7 @@ void animate_dfs_edges(AnimateEdges *edges_animation)
     // Draw paths we've already processed
     for(int i = 0; i < edges_animation->current_index; i++) {
         Edge *edge = edges_animation->edges[i];
-        DrawLineEx(edge->node_from->position,edge->node_to->position,CIRCLE_RADIUS/4,YELLOW);
+        DrawLineEx(edge->node_from->position,edge->node_to->position,CIRCLE_RADIUS/3.5f,YELLOW);
     }
 
     // If there are no more edges to animate, return
@@ -211,7 +211,7 @@ void animate_dfs_edges(AnimateEdges *edges_animation)
     // DrawSplineSegmentLinear(edge->node_from->position,draw_to_vector,CIRCLE_RADIUS/4,YELLOW);
 
     // How fast we want to animate
-    edges_animation->current_scale+=1.5f;
+    edges_animation->current_scale+=2.f;
 
     // Move on to next edge
     if(edges_animation->current_scale >= edge->weight) {
@@ -225,10 +225,10 @@ void animate_dfs_edges(AnimateEdges *edges_animation)
 
 int main(void)
 {
-    const int screenWidth = 800;
-    const int screenHeight = 800;
+    const int screenWidth = 1280;
+    const int screenHeight = 720;
     InitWindow(screenWidth, screenHeight, "Algo Visualizer");
-    SetTargetFPS(60);
+    SetTargetFPS(120);
 
     graph_init(&g,MAX_NODES);
 
