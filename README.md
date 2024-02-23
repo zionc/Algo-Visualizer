@@ -3,8 +3,8 @@ Algo Visualizer is an application that animates graph algorithms. The code base 
 Raylib repo: https://github.com/raysan5/raylib  
 Raylib official website: https://www.raylib.com/  
 
-Until I have an official Alpha, I will treat this README as a status update.
-
+I'll revise the README once I have a version I'm content with.
+  
 ## Supported algorithms:
 DFS
 
@@ -22,3 +22,6 @@ DFS
 
 ## Demo:
 https://github.com/zionc/Algo-Visualizer/assets/27440453/e9c7b281-0fd0-45ce-8f87-86d400a02b17
+
+## Feedback:
+I am constantly trying to learn new things so any feedback in ANY form is appreciated and encouraged!
