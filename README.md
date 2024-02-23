@@ -1,7 +1,7 @@
 # Still under development!
-Algo Visualizer is an application that animates graph algorithms. The code base is in C and it utilizes Raylib library for UI rendering.
-Raylib repo: https://github.com/raysan5/raylib
-Raylib official website: https://www.raylib.com/
+Algo Visualizer is an application that animates graph algorithms. The code base is in C and it utilizes Raylib library for UI rendering.  
+Raylib repo: https://github.com/raysan5/raylib  
+Raylib official website: https://www.raylib.com/  
 
 Until I have an official Alpha, I will treat this README as a status update.
 
