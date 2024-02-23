@@ -25,3 +25,7 @@ https://github.com/zionc/Algo-Visualizer/assets/27440453/e9c7b281-0fd0-45ce-8f87
 
 ## Feedback:
 I am constantly trying to learn new things so any feedback in ANY form is appreciated and encouraged!
+
+## Why C?
+Being able to say I built this in C > Programming in C.  
+Just kidding of course...
