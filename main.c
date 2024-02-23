@@ -211,7 +211,7 @@ void animate_dfs_edges(AnimateEdges *edges_animation)
     // DrawSplineSegmentLinear(edge->node_from->position,draw_to_vector,CIRCLE_RADIUS/4,YELLOW);
 
     // How fast we want to animate
-    edges_animation->current_scale+=2.f;
+    edges_animation->current_scale+=2.5f;
 
     // Move on to next edge
     if(edges_animation->current_scale >= edge->weight) {
