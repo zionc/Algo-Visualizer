@@ -60,7 +60,7 @@ static Edge *graph_create_edge_weight(Graph *graph,Node* from, Node* to, int wei
     return edge;
 }
 
-Node *graph_create_node(Graph *graph,Vector2 position, int id, NodeState state) 
+Node *graph_create_node(Graph *graph,Vector2 position, int id) 
 {
     if(graph->nodes_pool_size >= graph->max_nodes)
     {
@@ -86,7 +86,6 @@ Node *graph_create_node(Graph *graph,Vector2 position, int id, NodeState state)
     node->args           = NULL;
     node->position       = position;
     node->id             = id;
-    node->state          = state;
     graph_add_node(graph,node);
     return node;
 }

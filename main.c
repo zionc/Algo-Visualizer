@@ -71,7 +71,7 @@ void register_new_node()
         .x = GetMouseX(),
         .y = GetMouseY()
     };
-    graph_create_node(&g,vect,g.nodes_pool_size,UNCONNECTED);
+    graph_create_node(&g,vect,g.nodes_pool_size);
 }
 
 void register_new_edge(Node *start, Node *end)
