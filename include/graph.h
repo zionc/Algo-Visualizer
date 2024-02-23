@@ -8,6 +8,10 @@ typedef enum {
     HOVERING,
     SELECTED,
     CONNECTED,
+    ANIMATED_UNVISITED,
+    ANIMATED_VISITED,
+    ANIMATED_START,
+    ANIMATED_END
 } NodeState;
 
 typedef struct Node
