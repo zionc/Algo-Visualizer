@@ -11,9 +11,9 @@
 #define MAX_NODES 500
 
 typedef enum GameState {
-    DRAWING,            // State where User is drawing
-    ANIMATING,          // State where nodes/edges are animating
-    PAUSED,
+    DRAWING,      // State where User is drawing
+    ANIMATING,    // State where nodes/edges are animating
+    PAUSED,       // Game is paused (during animating)
 }GameState;
 
 typedef enum NodeState {
@@ -27,7 +27,7 @@ typedef enum NodeState {
 }NodeState;
 
 typedef struct Game {
-    GameState state;            // State of the game
+    GameState state;        // State of the game
     Graph *g;               // Graph to create logic/connections
     Node *edge_start;       // Start of an edge
     Node *animate_start;    // Start of a path
@@ -67,6 +67,7 @@ void game_create_node(Game *game)
     graph_create_node(g,position,g->edges_pool_size);
 }
 
+// Create an edge between start and end
 void game_create_edge(Game *game, Node *start, Node *end)
 {
     int distance = Vector2Distance(start->position,end->position);
@@ -74,7 +75,36 @@ void game_create_edge(Game *game, Node *start, Node *end)
     graph_connect_weight(game->g,end,start,distance);
 }
 
+// Update Node state for Drawing GameState
+void game_update_node_state_drawing(Game *game)
+{
+    Graph *g = game->g;
+    for(int i = 0; i < g->nodes_pool_size; i++) {
+        Node *node = g->nodes_pool[i];
+        if(node->adjacent_size > 0) node->state = CONNTECTED;
+        else node->state  = UNCONNECTED;
+    }
+}
 
+// Draw Nodes, color depends on state
+void game_draw_nodes_drawing(Game *game)
+{
+    Graph *g = game->g;
+    for(int i = 0; i < g->nodes_pool_size; i++) {
+        Node *node = g->nodes_pool[i];
+        switch (node->state)
+        {
+        case CONNTECTED:
+            node->color = BLUE;
+            break;
+        case UNCONNECTED:
+            node->color = RED;
+            break;
+        default:
+            break;
+        }
+    }
+}
 
 
 
