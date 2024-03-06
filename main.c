@@ -208,7 +208,6 @@ void animate_dfs_edges(AnimateEdges *edges_animation)
     float scale = edges_animation->current_scale;
     Vector2 draw_to_vector = Vector2MoveTowards(edge->node_from->position, edge->node_to->position,scale);
     DrawLineEx(edge->node_from->position,draw_to_vector,CIRCLE_RADIUS/3.5f,YELLOW);
-    // DrawSplineSegmentLinear(edge->node_from->position,draw_to_vector,CIRCLE_RADIUS/4,YELLOW);
 
     // How fast we want to animate
     edges_animation->current_scale+=2.5f;
