@@ -148,46 +148,46 @@ void update_edge_weights()
     }
 }
 
-Node *dfs_helper(Node *from, Node *to, bool *visited, Edge **edges_visited,int *index) {
-    if(from->id == to->id) {
-        return from;
-    }
-    else {
-        visited[from->id] = true;
-        Node *node = NULL;
-        for(int i = 0; i < from->adjacent_size; i++) {
-            Node *neighbor = from->neighbors[i];
-            int neighbor_index = neighbor->id;
-            if(visited[neighbor_index] != true) {
-                for(int j = 0; j < g.edges_pool_size; j++) {
-                    if(g.edges_pool[j]->node_from == from && g.edges_pool[j]->node_to == neighbor)
-                        edges_visited[*index] = g.edges_pool[j];
-                }
-                *index = *index + 1;
-                node = dfs_helper(neighbor,to,visited,edges_visited,index);
-            }
-            if(node == to) break;
-        }
-        return node;
-    }
-}
+// Node *dfs_helper(Node *from, Node *to, bool *visited, Edge **edges_visited,int *index) {
+//     if(from->id == to->id) {
+//         return from;
+//     }
+//     else {
+//         visited[from->id] = true;
+//         Node *node = NULL;
+//         for(int i = 0; i < from->adjacent_size; i++) {
+//             Node *neighbor = from->neighbors[i];
+//             int neighbor_index = neighbor->id;
+//             if(visited[neighbor_index] != true) {
+//                 for(int j = 0; j < g.edges_pool_size; j++) {
+//                     if(g.edges_pool[j]->node_from == from && g.edges_pool[j]->node_to == neighbor)
+//                         edges_visited[*index] = g.edges_pool[j];
+//                 }
+//                 *index = *index + 1;
+//                 node = dfs_helper(neighbor,to,visited,edges_visited,index);
+//             }
+//             if(node == to) break;
+//         }
+//         return node;
+//     }
+// }
 
-Edge **search_dfs(Node *from, Node *to) {
-    Edge **edges_visited = calloc(g.edges_pool_size,sizeof(Edge*));
-    bool *visited        = malloc(sizeof(bool) * g.nodes_pool_size);
-    if(edges_visited == NULL || visited == NULL) {
-        printf("search_dfs: Failed to malloc\n");
-        exit(1);
-    }
-    int edges_index = 0;
-    Node *node = dfs_helper(from,to,visited,edges_visited,&edges_index);
-    free(visited);
-    if(node == NULL)
-        printf("Could not find Node %d from Node %d\n",from->id,to->id);
-    else
-        printf("Path found from Node %d to Node %d\n",from->id,to->id);
-    return edges_visited;
-}
+// Edge **search_dfs(Node *from, Node *to) {
+//     Edge **edges_visited = calloc(g.edges_pool_size,sizeof(Edge*));
+//     bool *visited        = malloc(sizeof(bool) * g.nodes_pool_size);
+//     if(edges_visited == NULL || visited == NULL) {
+//         printf("search_dfs: Failed to malloc\n");
+//         exit(1);
+//     }
+//     int edges_index = 0;
+//     Node *node = dfs_helper(from,to,visited,edges_visited,&edges_index);
+//     free(visited);
+//     if(node == NULL)
+//         printf("Could not find Node %d from Node %d\n",from->id,to->id);
+//     else
+//         printf("Path found from Node %d to Node %d\n",from->id,to->id);
+//     return edges_visited;
+// }
 
 
 void animate_dfs_edges(AnimateEdges *edges_animation) 
@@ -301,7 +301,7 @@ int main(void)
                 end   = node;
                 printf("End --> %d\n", end->id);
                 if(animate_edges->edges!= NULL) free(animate_edges->edges);
-                Edge **paths = search_dfs(start,end);
+                Edge **paths = search_dfs(&g,start,end);
                 animate_edges->edges = paths;
                 animate_edges->current_index = 0;
                 animate_edges->current_scale = 0.f;

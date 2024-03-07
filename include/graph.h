@@ -71,5 +71,7 @@ int graph_node_contains(Node* node_container, Node* node);
 // Test node_1 and node_2 for equality
 int graph_node_equals(Node* node_1, Node* node_2);
 
+// DFS search 
+Edge **search_dfs(Graph *graph,Node *from, Node *to);
 
 #endif

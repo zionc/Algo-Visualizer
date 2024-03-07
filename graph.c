@@ -153,3 +153,43 @@ int graph_node_equals(Node* node_1, Node* node_2)
     return 0;
 }
 
+static Node *dfs_helper(Graph *g,Node *from, Node *to, bool *visited, Edge **edges_visited,int *index) {
+    if(from->id == to->id) {
+        return from;
+    }
+    else {
+        visited[from->id] = true;
+        Node *node = NULL;
+        for(int i = 0; i < from->adjacent_size; i++) {
+            Node *neighbor = from->neighbors[i];
+            int neighbor_index = neighbor->id;
+            if(visited[neighbor_index] != true) {
+                for(int j = 0; j < g->edges_pool_size; j++) {
+                    if(g->edges_pool[j]->node_from == from && g->edges_pool[j]->node_to == neighbor)
+                        edges_visited[*index] = g->edges_pool[j];
+                }
+                *index = *index + 1;
+                node = dfs_helper(g,neighbor,to,visited,edges_visited,index);
+            }
+            if(node == to) break;
+        }
+        return node;
+    }
+}
+
+Edge **search_dfs(Graph *g,Node *from, Node *to) {
+    Edge **edges_visited = calloc(g->edges_pool_size,sizeof(Edge*));
+    bool *visited        = malloc(sizeof(bool) * g->nodes_pool_size);
+    if(edges_visited == NULL || visited == NULL) {
+        printf("search_dfs: Failed to malloc\n");
+        exit(1);
+    }
+    int edges_index = 0;
+    Node *node = dfs_helper(g,from,to,visited,edges_visited,&edges_index);
+    free(visited);
+    if(node == NULL)
+        printf("Could not find Node %d from Node %d\n",from->id,to->id);
+    else
+        printf("Path found from Node %d to Node %d\n",from->id,to->id);
+    return edges_visited;
+}
