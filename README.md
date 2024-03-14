@@ -9,7 +9,7 @@ I'll revise the README once I have a version I'm content with.
 DFS
 
 ## Currently working on:
-1) Refactoring as main.c is pretty spaghetti
+1) Refactoring as main.c is pretty spaghetti -> on branch game-refactor
 2) Adding Dijkstra's shortest path algorithm
 
 ## Issues:
