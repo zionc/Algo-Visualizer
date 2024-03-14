@@ -34,7 +34,6 @@ void game_update_edge_weights(Game *game);                      // Update weight
 void game_update_left_click(Game *game);                        // Update Game on left click
 void game_create_edge(Game *game, Node *start, Node *end);      // Create an edge between start and end
 void game_create_node(Game *game);                              // Create node on left click         
-void game_create_edge(Game *game, Node *start, Node *end);      // Create an edge between start and end
 Node *game_update_node_collision(Game *game,Vector2 mouse_pos); // Check and returns Node if mouse_pos collides with it, NULL if it doesn't
 
 // Draw   -----------------------------------------------
