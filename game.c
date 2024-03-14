@@ -1,48 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "./include/raylib.h"
-#include "./include/raymath.h"
-#include "./include/graph.h"
 #include <string.h>
-
+#include "game.h"
 /**
  * game.c handles rendering nodes/animations to the screen
  * 
  * @author Zion Chilagan
  */
 
-#define BACKGROUNDCOLOR BLACK
 #define CIRCLE_RADIUS 20.f
-#define MAX_NODES 500
-#define FONTSIZE 5
+#define FONTSIZE 6
 
-typedef enum GameState {
-    DRAWING,      // State where User is drawing (creating nodes/edges, dragging)
-    ANIMATING,    // State where nodes/edges are animating
-    PAUSED,       // Game is paused (during ANIMATING state)
-}GameState;
-
-typedef enum NodeState {
-    DRAWING_UNCONNECTED,     // Node has no neighbors
-    DRAWING_CONNTECTED,      // Node has at least one neighbor
-    DRAWING_SELECTED,        // Node selected, initiated for drawing edge
-    DRAWING_DRAG,            // Node is currently being dragged
-    ANIMATING_UNVISITED,     // Node not visited during ANIMATING GameState
-    ANIMATING_VISITED,       // Node visited during ANIMATING GameState
-    ANIMATING_START,         // Start of path search
-    ANIMATING_END            // End of path search
-}NodeState;
-
-typedef struct Game {
-    GameState state;        // State of the game
-    Graph *g;               // Graph to create logic/connections
-    Node *edge_start;       // Node to draw an edge from
-    Node *animate_start;    // Start of a path
-    Node *animate_end;      // End of a path
-    int edge_animate_index; // Current edge to animate
-    float animate_speed;    // Speed of which to animate the edges
-    float animate_distance; // Scale of how far out an animate edge is going
-}Game;
 
 // Initialize game with graph and speed of edge animation
 void game_init(Game *game, Graph *graph, int speed)
@@ -74,7 +42,7 @@ void game_create_node(Game *game)
 {
     Graph *g = game->g;
     Vector2 position = GetMousePosition();
-    graph_create_node(g,position,g->edges_pool_size);
+    graph_create_node(g,position,g->nodes_pool_size);
 }
 
 // Create an edge between start and end
@@ -91,7 +59,7 @@ void game_update_node_state_drawing(Game *game)
     Graph *g = game->g;
     for(int i = 0; i < g->nodes_pool_size; i++) {
         Node *node = g->nodes_pool[i];
-        if(node->adjacent_size > 0) node->state = DRAWING_CONNTECTED;
+        if(node->adjacent_size > 0) node->state = DRAWING_CONNECTED;
         else node->state  = DRAWING_UNCONNECTED;
     }
 }
@@ -104,7 +72,7 @@ void game_draw_nodes(Game *game)
         Node *node = g->nodes_pool[i];
         switch (node->state)
         {
-        case DRAWING_CONNTECTED:
+        case DRAWING_CONNECTED:
             node->color = BLUE;
             break;
         case DRAWING_UNCONNECTED:
@@ -126,6 +94,7 @@ void game_draw_nodes(Game *game)
             node->color = RED;
             break;
         default:
+            printf("[ERROR] Unknown STATE: COLOR match\n");
             break;
         }
         DrawCircleV(node->position,CIRCLE_RADIUS,node->color);
@@ -203,10 +172,38 @@ void game_animate_search_edges(Game *game, Edge **edges)
     }
 }
 
-
-
-int main()
+void game_update_left_click(Game *game)
 {
-    printf("Hello, World!\n");
-    return 0;
+    Vector2 mouse_pos  = GetMousePosition();
+    Node *clicked_node = game_update_node_collision(game,mouse_pos);
+    Node *edge_start   = game->edge_start;
+
+    // Initiate user wants to draw an edge by selecting start node
+    if(clicked_node != NULL && edge_start == NULL) {          
+        clicked_node->state = DRAWING_SELECTED;
+        game->edge_start  = clicked_node;
+    } 
+
+    // Create an edge, as long as the two nodes are different
+    else if(clicked_node != NULL && edge_start != NULL && edge_start != clicked_node) {
+        clicked_node->state = DRAWING_CONNECTED;
+        edge_start->state   = DRAWING_CONNECTED;
+        game_create_edge(game,edge_start,clicked_node);
+        game->edge_start = NULL;
+    }
+
+    // If user clicks on empty space after initiaiting edge, cancel the process
+    else if(clicked_node == NULL && edge_start != NULL) {
+        if(edge_start->adjacent_size == 0) 
+            edge_start->state = DRAWING_UNCONNECTED;
+        else
+            edge_start->state = DRAWING_CONNECTED;
+        game->edge_start = NULL;
+    }
+
+    // Create a node
+    else if(clicked_node == NULL && edge_start == NULL) {
+        game_create_node(game);
+    }
 }
+

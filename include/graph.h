@@ -1,23 +1,24 @@
 #ifndef GRAPH_H
 #define GRAPH_H
+
 #include "raylib.h"
 #include "raymath.h"
 
-typedef enum {
-    UNCONNECTED,  
-    HOVERING,
-    SELECTED,
-    CONNECTED,
-    ANIMATED_UNVISITED,
-    ANIMATED_VISITED,
-    ANIMATED_START,
-    ANIMATED_END
-} NodeState;
+typedef enum NodeState {
+    DRAWING_UNCONNECTED,     // Node has no neighbors
+    DRAWING_CONNECTED,       // Node has at least one neighbor
+    DRAWING_SELECTED,        // Node selected, initiated for drawing edge
+    DRAWING_DRAG,            // Node is currently being dragged
+    ANIMATING_UNVISITED,     // Node not visited during ANIMATING GameState
+    ANIMATING_VISITED,       // Node visited during ANIMATING GameState
+    ANIMATING_START,         // Node is the start of the path visualizer 
+    ANIMATING_END            // Node is the end of the path visualizer
+}NodeState;
 
 typedef struct Node
 {
-    struct Node **neighbors;  
-    int adjacent_size;
+    struct Node **neighbors; 
+    int adjacent_size;       
     int id;
     char *args;
     Vector2 position;
