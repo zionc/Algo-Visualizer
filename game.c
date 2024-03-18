@@ -53,14 +53,18 @@ void game_create_edge(Game *game, Node *start, Node *end)
     graph_connect_weight(game->g,end,start,distance);
 }
 
+void game_update_node_state(Node *node) 
+{
+    if(node->adjacent_size == 0) node->state = DRAWING_UNCONNECTED;
+    else                         node->state = DRAWING_CONNECTED;
+}
+
 // Set the Node state appropriately while in DRAWING state
-void game_update_node_state_drawing(Game *game)
+void game_update_all_node_state_drawing(Game *game)
 {
     Graph *g = game->g;
     for(int i = 0; i < g->nodes_pool_size; i++) {
-        Node *node = g->nodes_pool[i];
-        if(node->adjacent_size > 0) node->state = DRAWING_CONNECTED;
-        else node->state  = DRAWING_UNCONNECTED;
+        game_update_node_state(g->nodes_pool[i]);
     }
 }
 
@@ -204,6 +208,25 @@ void game_update_left_click(Game *game)
     // Create a node
     else if(clicked_node == NULL && edge_start == NULL) {
         game_create_node(game);
+    }
+}
+
+
+void game_update_left_drag(Game *game)
+{
+    Vector2 mouse_pos  = GetMousePosition();
+    if(game->edge_start != NULL && IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+        game->edge_start->position = mouse_pos;
+        game->edge_start->state    = DRAWING_SELECTED;
+    }
+    else if(game->edge_start == NULL && IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+        game->edge_start = game_update_node_collision(game,mouse_pos);
+    }
+    if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+        if(game->edge_start != NULL) {
+            game_update_node_state(game->edge_start);
+            game->edge_start = NULL;
+        }
     }
 }
 

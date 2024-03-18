@@ -29,12 +29,15 @@ void game_init(Game *game, Graph *graph, int speed); // Initialize game with gra
 
 
 // Update -----------------------------------------------
-void game_update_node_state_drawing(Game *game);                // Set the Node state appropriately while in DRAWING state
+void game_update_all_node_state_drawing(Game *game);            // Update the states of all nodes based on Drawing/Dragging state
+void game_update_node_state(Node *node);                        // Update the state of one node based on Drawing/Dragging state
 void game_update_edge_weights(Game *game);                      // Update weights for nodes (Needed if nodes move around)
 void game_update_left_click(Game *game);                        // Update Game on left click
+void game_update_left_drag(Game *game);                         // Update Game on drag
 void game_create_edge(Game *game, Node *start, Node *end);      // Create an edge between start and end
 void game_create_node(Game *game);                              // Create node on left click         
 Node *game_update_node_collision(Game *game,Vector2 mouse_pos); // Check and returns Node if mouse_pos collides with it, NULL if it doesn't
+
 
 // Draw   -----------------------------------------------
 void game_draw_nodes(Game *game);   // Draw Nodes, color depends on state
